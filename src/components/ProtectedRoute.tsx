@@ -15,7 +15,8 @@ export function ProtectedRoute({ children, allowedRole }: { children: React.Reac
   }
 
   if (!user) return <Navigate to="/login" replace />;
-  if (role !== allowedRole) return <Navigate to="/login" replace />;
+  if (!role) return <Navigate to="/waiting" replace />;
+  if (role !== allowedRole) return <Navigate to={role === 'admin' ? '/admin' : '/client'} replace />;
 
   return <>{children}</>;
 }
