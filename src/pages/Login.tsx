@@ -1,22 +1,24 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Navigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 
 export default function Login() {
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const { signInWithGoogle, role } = useAuth();
-  const navigate = useNavigate();
+  const { signInWithGoogle, role, user, loading } = useAuth();
 
-  if (role === 'admin') {
-    navigate('/admin', { replace: true });
-    return null;
+  if (loading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+      </div>
+    );
   }
-  if (role === 'client') {
-    navigate('/client', { replace: true });
-    return null;
-  }
+
+  if (user && role === 'admin') return <Navigate to="/admin" replace />;
+  if (user && role === 'client') return <Navigate to="/client" replace />;
+  if (user && !role) return <Navigate to="/waiting" replace />;
 
   const handleGoogleSignIn = async () => {
     setError('');
