@@ -2,18 +2,13 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 
 export default function Login() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const { signIn, signInWithGoogle, role } = useAuth();
+  const { signInWithGoogle, role } = useAuth();
   const navigate = useNavigate();
 
-  // If already authenticated, redirect based on role
   if (role === 'admin') {
     navigate('/admin', { replace: true });
     return null;
@@ -22,17 +17,6 @@ export default function Login() {
     navigate('/client', { replace: true });
     return null;
   }
-
-  const handleEmailSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
-    setIsLoading(true);
-    const { error } = await signIn(email, password);
-    if (error) {
-      setError(error.message);
-    }
-    setIsLoading(false);
-  };
 
   const handleGoogleSignIn = async () => {
     setError('');
@@ -74,44 +58,9 @@ export default function Login() {
             {isLoading ? 'Signing in...' : 'Continue with Google'}
           </Button>
 
-          <div className="relative">
-            <div className="absolute inset-0 flex items-center">
-              <span className="w-full border-t border-border" />
-            </div>
-            <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-card px-2 text-muted-foreground">Or continue with email</span>
-            </div>
-          </div>
-
-          <form onSubmit={handleEmailSubmit} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="you@example.com"
-                required
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
-              <Input
-                id="password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
-                required
-              />
-            </div>
-
-            <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? 'Signing in...' : 'Sign In with Email'}
-            </Button>
-          </form>
+          <p className="text-center text-xs text-muted-foreground">
+            Sign in with your Google account to get started
+          </p>
         </div>
       </div>
     </div>
