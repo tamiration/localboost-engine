@@ -14,9 +14,284 @@ export type Database = {
   }
   public: {
     Tables: {
+      analytics: {
+        Row: {
+          ad_platform: string | null
+          city_resolved: string | null
+          created_at: string
+          cta_clicks: number | null
+          device_type: string | null
+          form_submissions: number | null
+          id: string
+          landing_page_id: string
+          location_source: string | null
+          page_views: number | null
+          unique_visitors: number | null
+        }
+        Insert: {
+          ad_platform?: string | null
+          city_resolved?: string | null
+          created_at?: string
+          cta_clicks?: number | null
+          device_type?: string | null
+          form_submissions?: number | null
+          id?: string
+          landing_page_id: string
+          location_source?: string | null
+          page_views?: number | null
+          unique_visitors?: number | null
+        }
+        Update: {
+          ad_platform?: string | null
+          city_resolved?: string | null
+          created_at?: string
+          cta_clicks?: number | null
+          device_type?: string | null
+          form_submissions?: number | null
+          id?: string
+          landing_page_id?: string
+          location_source?: string | null
+          page_views?: number | null
+          unique_visitors?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "analytics_landing_page_id_fkey"
+            columns: ["landing_page_id"]
+            isOneToOne: false
+            referencedRelation: "landing_pages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      clients: {
+        Row: {
+          active: boolean | null
+          business_name: string
+          created_at: string
+          default_address: string | null
+          default_area_code: string | null
+          default_city: string | null
+          default_state: string | null
+          email: string | null
+          id: string
+          notes: string | null
+          phone: string | null
+          service_verticals: string[] | null
+          subscription_tier: string | null
+          website_url: string | null
+        }
+        Insert: {
+          active?: boolean | null
+          business_name: string
+          created_at?: string
+          default_address?: string | null
+          default_area_code?: string | null
+          default_city?: string | null
+          default_state?: string | null
+          email?: string | null
+          id?: string
+          notes?: string | null
+          phone?: string | null
+          service_verticals?: string[] | null
+          subscription_tier?: string | null
+          website_url?: string | null
+        }
+        Update: {
+          active?: boolean | null
+          business_name?: string
+          created_at?: string
+          default_address?: string | null
+          default_area_code?: string | null
+          default_city?: string | null
+          default_state?: string | null
+          email?: string | null
+          id?: string
+          notes?: string | null
+          phone?: string | null
+          service_verticals?: string[] | null
+          subscription_tier?: string | null
+          website_url?: string | null
+        }
+        Relationships: []
+      }
+      edit_requests: {
+        Row: {
+          admin_notes: string | null
+          client_id: string
+          completed_at: string | null
+          created_at: string
+          edit_description: string
+          id: string
+          landing_page_id: string | null
+          requested_by: string | null
+          status: string | null
+        }
+        Insert: {
+          admin_notes?: string | null
+          client_id: string
+          completed_at?: string | null
+          created_at?: string
+          edit_description: string
+          id?: string
+          landing_page_id?: string | null
+          requested_by?: string | null
+          status?: string | null
+        }
+        Update: {
+          admin_notes?: string | null
+          client_id?: string
+          completed_at?: string | null
+          created_at?: string
+          edit_description?: string
+          id?: string
+          landing_page_id?: string | null
+          requested_by?: string | null
+          status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "edit_requests_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "edit_requests_landing_page_id_fkey"
+            columns: ["landing_page_id"]
+            isOneToOne: false
+            referencedRelation: "landing_pages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "edit_requests_requested_by_fkey"
+            columns: ["requested_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      geo_configs: {
+        Row: {
+          adgroup_param: string | null
+          campaign_param: string | null
+          created_at: string
+          id: string
+          keyword_param: string | null
+          landing_page_id: string
+          loc_interest_param: string | null
+          loc_physical_param: string | null
+          priority_1: string | null
+          priority_2: string | null
+          priority_3: string | null
+          use_adgroup_as_city: boolean | null
+        }
+        Insert: {
+          adgroup_param?: string | null
+          campaign_param?: string | null
+          created_at?: string
+          id?: string
+          keyword_param?: string | null
+          landing_page_id: string
+          loc_interest_param?: string | null
+          loc_physical_param?: string | null
+          priority_1?: string | null
+          priority_2?: string | null
+          priority_3?: string | null
+          use_adgroup_as_city?: boolean | null
+        }
+        Update: {
+          adgroup_param?: string | null
+          campaign_param?: string | null
+          created_at?: string
+          id?: string
+          keyword_param?: string | null
+          landing_page_id?: string
+          loc_interest_param?: string | null
+          loc_physical_param?: string | null
+          priority_1?: string | null
+          priority_2?: string | null
+          priority_3?: string | null
+          use_adgroup_as_city?: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "geo_configs_landing_page_id_fkey"
+            columns: ["landing_page_id"]
+            isOneToOne: false
+            referencedRelation: "landing_pages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      landing_pages: {
+        Row: {
+          bing_ads_url: string | null
+          client_id: string
+          created_at: string
+          cta_text: string | null
+          deployed: boolean | null
+          google_ads_url: string | null
+          headline_template: string | null
+          id: string
+          page_name: string
+          page_views: number | null
+          phone_template: string | null
+          primary_color: string | null
+          subdomain: string | null
+          subheadline_template: string | null
+          template_type: string | null
+        }
+        Insert: {
+          bing_ads_url?: string | null
+          client_id: string
+          created_at?: string
+          cta_text?: string | null
+          deployed?: boolean | null
+          google_ads_url?: string | null
+          headline_template?: string | null
+          id?: string
+          page_name: string
+          page_views?: number | null
+          phone_template?: string | null
+          primary_color?: string | null
+          subdomain?: string | null
+          subheadline_template?: string | null
+          template_type?: string | null
+        }
+        Update: {
+          bing_ads_url?: string | null
+          client_id?: string
+          created_at?: string
+          cta_text?: string | null
+          deployed?: boolean | null
+          google_ads_url?: string | null
+          headline_template?: string | null
+          id?: string
+          page_name?: string
+          page_views?: number | null
+          phone_template?: string | null
+          primary_color?: string | null
+          subdomain?: string | null
+          subheadline_template?: string | null
+          template_type?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "landing_pages_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
+          client_id: string | null
           created_at: string
           email: string | null
           full_name: string | null
@@ -26,6 +301,7 @@ export type Database = {
         }
         Insert: {
           avatar_url?: string | null
+          client_id?: string | null
           created_at?: string
           email?: string | null
           full_name?: string | null
@@ -35,12 +311,122 @@ export type Database = {
         }
         Update: {
           avatar_url?: string | null
+          client_id?: string | null
           created_at?: string
           email?: string | null
           full_name?: string | null
           id?: string
           updated_at?: string
           user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_profiles_client"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      subscriptions: {
+        Row: {
+          billing_cycle: string | null
+          cancelled_at: string | null
+          client_id: string
+          created_at: string
+          id: string
+          monthly_amount: number | null
+          next_billing_date: string | null
+          plan_tier: string | null
+          setup_fee_amount: number | null
+          setup_fee_paid: boolean | null
+          status: string | null
+          stripe_customer_id: string | null
+          stripe_subscription_id: string | null
+        }
+        Insert: {
+          billing_cycle?: string | null
+          cancelled_at?: string | null
+          client_id: string
+          created_at?: string
+          id?: string
+          monthly_amount?: number | null
+          next_billing_date?: string | null
+          plan_tier?: string | null
+          setup_fee_amount?: number | null
+          setup_fee_paid?: boolean | null
+          status?: string | null
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
+        }
+        Update: {
+          billing_cycle?: string | null
+          cancelled_at?: string | null
+          client_id?: string
+          created_at?: string
+          id?: string
+          monthly_amount?: number | null
+          next_billing_date?: string | null
+          plan_tier?: string | null
+          setup_fee_amount?: number | null
+          setup_fee_paid?: boolean | null
+          status?: string | null
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subscriptions_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      templates: {
+        Row: {
+          active: boolean | null
+          created_at: string
+          default_cta: string | null
+          default_headline: string | null
+          default_primary_color: string | null
+          default_subheadline: string | null
+          html_structure: string | null
+          id: string
+          is_premium: boolean | null
+          template_name: string
+          thumbnail_url: string | null
+          vertical: string | null
+        }
+        Insert: {
+          active?: boolean | null
+          created_at?: string
+          default_cta?: string | null
+          default_headline?: string | null
+          default_primary_color?: string | null
+          default_subheadline?: string | null
+          html_structure?: string | null
+          id?: string
+          is_premium?: boolean | null
+          template_name: string
+          thumbnail_url?: string | null
+          vertical?: string | null
+        }
+        Update: {
+          active?: boolean | null
+          created_at?: string
+          default_cta?: string | null
+          default_headline?: string | null
+          default_primary_color?: string | null
+          default_subheadline?: string | null
+          html_structure?: string | null
+          id?: string
+          is_premium?: boolean | null
+          template_name?: string
+          thumbnail_url?: string | null
+          vertical?: string | null
         }
         Relationships: []
       }
@@ -67,6 +453,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_my_client_id: { Args: never; Returns: string }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
