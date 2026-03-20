@@ -287,7 +287,7 @@ async function batchUpsert<T extends Record<string, unknown>>(
 
     const { error } = await supabase
       .from(table)
-      .upsert(batch, { onConflict: conflictColumn });
+      .upsert(batch, { onConflict: conflictColumn, ignoreDuplicates: false });
 
     if (error) {
       console.error(`\n  Error in ${table} batch ${batchNum}:`, error.message);
@@ -297,6 +297,42 @@ async function batchUpsert<T extends Record<string, unknown>>(
   }
 
   console.log(`  ${table}: ${imported} rows imported                    `);
+}
+
+/**
+ * For us_area_codes: the unique constraint is on LOWER(city)+LOWER(state)
+ * which can't be used with JS client upsert. Use delete-then-insert approach.
+ */
+async function batchInsertAreaCodes(records: AreaCodeRow[]): Promise<void> {
+  const totalBatches = Math.ceil(records.length / BATCH_SIZE);
+  let imported = 0;
+
+  // Clear existing data first (safe since we're repopulating)
+  const { error: deleteError } = await supabase
+    .from('us_area_codes')
+    .delete()
+    .neq('id', '00000000-0000-0000-0000-000000000000');
+
+  if (deleteError) {
+    console.error('  Error clearing us_area_codes:', deleteError.message);
+    throw deleteError;
+  }
+
+  for (let i = 0; i < records.length; i += BATCH_SIZE) {
+    const batch = records.slice(i, i + BATCH_SIZE);
+    const batchNum = Math.floor(i / BATCH_SIZE) + 1;
+    process.stdout.write(`  Importing us_area_codes batch ${batchNum}/${totalBatches}...\r`);
+
+    const { error } = await supabase.from('us_area_codes').insert(batch);
+
+    if (error) {
+      console.error(`\n  Error in us_area_codes batch ${batchNum}:`, error.message);
+      throw error;
+    }
+    imported += batch.length;
+  }
+
+  console.log(`  us_area_codes: ${imported} rows imported                    `);
 }
 
 // ============================================================
