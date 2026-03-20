@@ -212,7 +212,9 @@ describe('getAreaCode', () => {
   });
 
   it('returns empty on Supabase error', async () => {
-    const errorSupabase = createMockSupabase({ throwOnTable: 'us_area_codes' });
+    const errorSupabase = {
+      from: vi.fn(() => { throw new Error('connection failed'); }),
+    } as unknown as SupabaseClient;
     expect(await getAreaCode('Dallas', 'Texas', 'US', errorSupabase)).toBe('');
   });
 });
