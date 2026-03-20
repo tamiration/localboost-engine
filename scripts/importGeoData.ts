@@ -464,7 +464,7 @@ async function main(): Promise<void> {
 
   // Step 5 — import to Supabase
   console.log('\n=== STEP 5: Importing to Supabase ===');
-  await batchUpsert('us_area_codes', cityRecords, 'id');
+  await batchInsertAreaCodes(cityRecords);
   await batchUpsert('us_state_area_codes', stateRecords, 'state');
   await batchUpsert('google_geo_lookup', googleRecords, 'criteria_id');
   await batchUpsert('bing_geo_lookup', bingRecords, 'location_id');
