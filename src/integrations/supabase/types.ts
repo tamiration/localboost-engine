@@ -74,6 +74,7 @@ export type Database = {
           default_city: string | null
           default_state: string | null
           email: string | null
+          has_toll_free: boolean | null
           id: string
           notes: string | null
           phone: string | null
@@ -90,6 +91,7 @@ export type Database = {
           default_city?: string | null
           default_state?: string | null
           email?: string | null
+          has_toll_free?: boolean | null
           id?: string
           notes?: string | null
           phone?: string | null
@@ -106,6 +108,7 @@ export type Database = {
           default_city?: string | null
           default_state?: string | null
           email?: string | null
+          has_toll_free?: boolean | null
           id?: string
           notes?: string | null
           phone?: string | null
@@ -281,6 +284,59 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "landing_pages_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      phone_numbers: {
+        Row: {
+          active: boolean | null
+          area_code: string
+          call_tracking_enabled: boolean | null
+          call_tracking_number: string | null
+          call_tracking_provider: string | null
+          client_id: string
+          created_at: string
+          id: string
+          is_primary: boolean | null
+          is_toll_free: boolean | null
+          label: string | null
+          phone_number: string
+        }
+        Insert: {
+          active?: boolean | null
+          area_code: string
+          call_tracking_enabled?: boolean | null
+          call_tracking_number?: string | null
+          call_tracking_provider?: string | null
+          client_id: string
+          created_at?: string
+          id?: string
+          is_primary?: boolean | null
+          is_toll_free?: boolean | null
+          label?: string | null
+          phone_number: string
+        }
+        Update: {
+          active?: boolean | null
+          area_code?: string
+          call_tracking_enabled?: boolean | null
+          call_tracking_number?: string | null
+          call_tracking_provider?: string | null
+          client_id?: string
+          created_at?: string
+          id?: string
+          is_primary?: boolean | null
+          is_toll_free?: boolean | null
+          label?: string | null
+          phone_number?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "phone_numbers_client_id_fkey"
             columns: ["client_id"]
             isOneToOne: false
             referencedRelation: "clients"
