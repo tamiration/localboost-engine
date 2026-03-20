@@ -234,14 +234,15 @@ function parseBing(
     if (locationType !== 'City') continue;
     if (!displayName.includes('United States') && !displayName.includes('Australia')) continue;
 
-    // Parse: "City|State|Country" or "City, State, Country"
-    // Bing uses comma-separated format
-    const parts = displayName.split(',').map((s) => s.trim());
+    // Bing Display Name uses comma-separated: "City, State, Country"
+    // Some entries may also use pipe: "City|State|Country"
+    const separator = displayName.includes('|') ? '|' : ',';
+    const parts = displayName.split(separator).map((s) => s.trim());
     if (parts.length < 3) continue;
 
     const city = parts[0];
     const state = parts[1];
-    const countryStr = parts[2];
+    const countryStr = parts[parts.length - 1];
 
     let country: string;
     if (countryStr === 'United States' || countryStr.includes('United States')) {
