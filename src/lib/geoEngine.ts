@@ -374,3 +374,101 @@ export async function resolveLocation(
     return buildGeoResult(null, params, platform, 'no_location', phoneResult.display_number, phoneResult.match_type);
   }
 }
+
+// =============================================
+// Part 3 — Content Injection & Analytics
+// =============================================
+
+/**
+ * Token map for template variable replacement.
+ * All keys are lowercase for case-insensitive matching.
+ */
+type TokenMap = Record<string, string>;
+
+function buildTokenMap(
+  geoResult: GeoResult,
+  extras?: {
+    business_name?: string;
+    phone?: string;
+    service?: string;
+  }
+): TokenMap {
+  return {
+    city: geoResult.city ?? '',
+    state: geoResult.state ?? '',
+    state_abbr: geoResult.state_abbr ?? '',
+    area_code: geoResult.area_code ?? '',
+    keyword: geoResult.keyword,
+    adgroup: geoResult.adgroup,
+    campaign: geoResult.campaign,
+    device: geoResult.device,
+    network: geoResult.network,
+    matchtype: geoResult.matchtype,
+    business_name: extras?.business_name ?? '',
+    phone: extras?.phone ?? '',
+    service: extras?.service ?? '',
+  };
+}
+
+/**
+ * Replaces all {variable} tokens in a template string
+ * with values from the GeoResult and optional extras.
+ *
+ * Case insensitive: {CITY}, {City}, {city} all match.
+ * Missing values become '' (never 'undefined' or 'null').
+ * Does not mutate the original template.
+ */
+export function injectDynamicContent(
+  template: string,
+  geoResult: GeoResult,
+  extras?: {
+    business_name?: string;
+    phone?: string;
+    service?: string;
+  }
+): string {
+  const tokens = buildTokenMap(geoResult, extras);
+
+  // Replace all {key} patterns, case insensitive
+  return template.replace(
+    /\{(\w+)\}/gi,
+    (_match, key: string) => {
+      const value = tokens[key.toLowerCase()];
+      return value !== undefined ? value : '';
+    }
+  );
+}
+
+/**
+ * Logs a page visit to the analytics table and
+ * increments page_views on landing_pages.
+ *
+ * Fire-and-forget — call as logVisit(...).catch(() => {})
+ * Never throw. Never block page rendering.
+ */
+export async function logVisit(
+  landingPageId: string,
+  geoResult: GeoResult,
+  supabase: SupabaseClient
+): Promise<void> {
+  try {
+    // Insert analytics row
+    await supabase.from('analytics').insert({
+      landing_page_id: landingPageId,
+      location_source: geoResult.resolutionSource,
+      city_resolved: geoResult.city ?? '',
+      device_type: geoResult.device || 'unknown',
+      ad_platform: geoResult.adPlatform,
+      page_views: 1,
+      created_at: new Date().toISOString(),
+    });
+
+    // Increment page_views counter via RPC
+    await supabase.rpc('increment_page_views', {
+      _landing_page_id: landingPageId,
+    });
+  } catch {
+    // Silently swallow — analytics must never affect page load
+    console.warn('[geoEngine] logVisit failed for page:', landingPageId);
+  }
+}
