@@ -558,6 +558,33 @@ export type Database = {
         }
         Relationships: []
       }
+      unknown_geo_ids: {
+        Row: {
+          ad_platform: string
+          count: number
+          first_seen: string
+          geo_id: string
+          id: string
+          last_seen: string
+        }
+        Insert: {
+          ad_platform: string
+          count?: number
+          first_seen?: string
+          geo_id: string
+          id?: string
+          last_seen?: string
+        }
+        Update: {
+          ad_platform?: string
+          count?: number
+          first_seen?: string
+          geo_id?: string
+          id?: string
+          last_seen?: string
+        }
+        Relationships: []
+      }
       us_area_codes: {
         Row: {
           area_code: string
@@ -624,6 +651,14 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      increment_page_views: {
+        Args: { _landing_page_id: string }
+        Returns: undefined
+      }
+      log_unknown_geo_id: {
+        Args: { _ad_platform: string; _geo_id: string }
+        Returns: undefined
       }
     }
     Enums: {
