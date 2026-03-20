@@ -230,15 +230,7 @@ async function lookupByAdGroupName(
   return queryTable('bing_geo_lookup');
 }
 
-function logUnknownGeoId(
-  geoId: string,
-  platform: 'google' | 'bing' | 'direct',
-  _supabase: SupabaseClient
-): void {
-  // Phase 2: persist unknown IDs to a table for admin review.
-  // For now, log to console so we can track misses during development.
-  console.warn(`[geoEngine] Unknown geo ID: ${geoId} (platform: ${platform})`);
-}
+// logUnknownGeoId is now imported from @/lib/geoLogger
 
 // ---- Geo ID lookup by platform ----
 
