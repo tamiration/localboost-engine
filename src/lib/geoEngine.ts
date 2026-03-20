@@ -167,7 +167,7 @@ export async function lookupByGoogleId(
   }
 }
 
-async function lookupByBingId(
+export async function lookupByBingId(
   locationId: string,
   supabase: SupabaseClient
 ): Promise<GeoEntry | null> {
