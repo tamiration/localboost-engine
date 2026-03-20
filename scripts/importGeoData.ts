@@ -234,14 +234,15 @@ function parseBing(
     if (locationType !== 'City') continue;
     if (!displayName.includes('United States') && !displayName.includes('Australia')) continue;
 
-    // Parse: "City|State|Country" or "City, State, Country"
-    // Bing uses comma-separated format
-    const parts = displayName.split(',').map((s) => s.trim());
+    // Bing Display Name uses comma-separated: "City, State, Country"
+    // Some entries may also use pipe: "City|State|Country"
+    const separator = displayName.includes('|') ? '|' : ',';
+    const parts = displayName.split(separator).map((s) => s.trim());
     if (parts.length < 3) continue;
 
     const city = parts[0];
     const state = parts[1];
-    const countryStr = parts[2];
+    const countryStr = parts[parts.length - 1];
 
     let country: string;
     if (countryStr === 'United States' || countryStr.includes('United States')) {
@@ -286,7 +287,7 @@ async function batchUpsert<T extends Record<string, unknown>>(
 
     const { error } = await supabase
       .from(table)
-      .upsert(batch, { onConflict: conflictColumn });
+      .upsert(batch, { onConflict: conflictColumn, ignoreDuplicates: false });
 
     if (error) {
       console.error(`\n  Error in ${table} batch ${batchNum}:`, error.message);
@@ -296,6 +297,42 @@ async function batchUpsert<T extends Record<string, unknown>>(
   }
 
   console.log(`  ${table}: ${imported} rows imported                    `);
+}
+
+/**
+ * For us_area_codes: the unique constraint is on LOWER(city)+LOWER(state)
+ * which can't be used with JS client upsert. Use delete-then-insert approach.
+ */
+async function batchInsertAreaCodes(records: AreaCodeRow[]): Promise<void> {
+  const totalBatches = Math.ceil(records.length / BATCH_SIZE);
+  let imported = 0;
+
+  // Clear existing data first (safe since we're repopulating)
+  const { error: deleteError } = await supabase
+    .from('us_area_codes')
+    .delete()
+    .neq('id', '00000000-0000-0000-0000-000000000000');
+
+  if (deleteError) {
+    console.error('  Error clearing us_area_codes:', deleteError.message);
+    throw deleteError;
+  }
+
+  for (let i = 0; i < records.length; i += BATCH_SIZE) {
+    const batch = records.slice(i, i + BATCH_SIZE);
+    const batchNum = Math.floor(i / BATCH_SIZE) + 1;
+    process.stdout.write(`  Importing us_area_codes batch ${batchNum}/${totalBatches}...\r`);
+
+    const { error } = await supabase.from('us_area_codes').insert(batch);
+
+    if (error) {
+      console.error(`\n  Error in us_area_codes batch ${batchNum}:`, error.message);
+      throw error;
+    }
+    imported += batch.length;
+  }
+
+  console.log(`  us_area_codes: ${imported} rows imported                    `);
 }
 
 // ============================================================
@@ -427,7 +464,7 @@ async function main(): Promise<void> {
 
   // Step 5 — import to Supabase
   console.log('\n=== STEP 5: Importing to Supabase ===');
-  await batchUpsert('us_area_codes', cityRecords, 'id');
+  await batchInsertAreaCodes(cityRecords);
   await batchUpsert('us_state_area_codes', stateRecords, 'state');
   await batchUpsert('google_geo_lookup', googleRecords, 'criteria_id');
   await batchUpsert('bing_geo_lookup', bingRecords, 'location_id');
