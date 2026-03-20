@@ -142,7 +142,7 @@ export interface GeoResult {
 
 // ---- Lookup helpers (not exported) ----
 
-async function lookupByGoogleId(
+export async function lookupByGoogleId(
   criteriaId: string,
   supabase: SupabaseClient
 ): Promise<GeoEntry | null> {
