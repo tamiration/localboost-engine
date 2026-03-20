@@ -192,7 +192,7 @@ export async function lookupByBingId(
   }
 }
 
-async function lookupByAdGroupName(
+export async function lookupByAdGroupName(
   adgroupName: string,
   platform: 'google' | 'bing' | 'direct',
   country: 'US' | 'AU',
