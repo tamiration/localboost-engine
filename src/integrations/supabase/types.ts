@@ -68,6 +68,7 @@ export type Database = {
         Row: {
           active: boolean | null
           business_name: string
+          country: string
           created_at: string
           default_address: string | null
           default_area_code: string | null
@@ -85,6 +86,7 @@ export type Database = {
         Insert: {
           active?: boolean | null
           business_name: string
+          country?: string
           created_at?: string
           default_address?: string | null
           default_area_code?: string | null
@@ -102,6 +104,7 @@ export type Database = {
         Update: {
           active?: boolean | null
           business_name?: string
+          country?: string
           created_at?: string
           default_address?: string | null
           default_area_code?: string | null
@@ -233,6 +236,7 @@ export type Database = {
         Row: {
           bing_ads_url: string | null
           client_id: string
+          country: string
           created_at: string
           cta_text: string | null
           deployed: boolean | null
@@ -250,6 +254,7 @@ export type Database = {
         Insert: {
           bing_ads_url?: string | null
           client_id: string
+          country?: string
           created_at?: string
           cta_text?: string | null
           deployed?: boolean | null
@@ -267,6 +272,7 @@ export type Database = {
         Update: {
           bing_ads_url?: string | null
           client_id?: string
+          country?: string
           created_at?: string
           cta_text?: string | null
           deployed?: boolean | null
@@ -390,6 +396,7 @@ export type Database = {
           billing_cycle: string | null
           cancelled_at: string | null
           client_id: string
+          countries: string[]
           created_at: string
           id: string
           monthly_amount: number | null
@@ -405,6 +412,7 @@ export type Database = {
           billing_cycle?: string | null
           cancelled_at?: string | null
           client_id: string
+          countries?: string[]
           created_at?: string
           id?: string
           monthly_amount?: number | null
@@ -420,6 +428,7 @@ export type Database = {
           billing_cycle?: string | null
           cancelled_at?: string | null
           client_id?: string
+          countries?: string[]
           created_at?: string
           id?: string
           monthly_amount?: number | null
