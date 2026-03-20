@@ -98,6 +98,7 @@ export function detectAdPlatform(
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { getAreaCode } from '@/lib/areaCodes';
 import { resolvePhoneNumber, type PhoneNumber } from '@/lib/phoneResolver';
+import { logUnknownGeoId } from '@/lib/geoLogger';
 
 export interface GeoEntry {
   city: string;
