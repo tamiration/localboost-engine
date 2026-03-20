@@ -495,6 +495,42 @@ export type Database = {
         }
         Relationships: []
       }
+      us_area_codes: {
+        Row: {
+          area_code: string
+          city: string
+          id: string
+          state: string
+        }
+        Insert: {
+          area_code: string
+          city: string
+          id?: string
+          state: string
+        }
+        Update: {
+          area_code?: string
+          city?: string
+          id?: string
+          state?: string
+        }
+        Relationships: []
+      }
+      us_state_area_codes: {
+        Row: {
+          area_code: string
+          state: string
+        }
+        Insert: {
+          area_code: string
+          state: string
+        }
+        Update: {
+          area_code?: string
+          state?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           id: string
