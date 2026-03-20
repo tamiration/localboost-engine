@@ -64,6 +64,39 @@ export type Database = {
           },
         ]
       }
+      bing_geo_lookup: {
+        Row: {
+          area_code: string
+          city: string
+          country: string
+          created_at: string
+          google_criteria_id: string
+          location_id: string
+          state: string
+          state_abbr: string
+        }
+        Insert: {
+          area_code?: string
+          city: string
+          country: string
+          created_at?: string
+          google_criteria_id?: string
+          location_id: string
+          state: string
+          state_abbr: string
+        }
+        Update: {
+          area_code?: string
+          city?: string
+          country?: string
+          created_at?: string
+          google_criteria_id?: string
+          location_id?: string
+          state?: string
+          state_abbr?: string
+        }
+        Relationships: []
+      }
       clients: {
         Row: {
           active: boolean | null
@@ -231,6 +264,36 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      google_geo_lookup: {
+        Row: {
+          area_code: string
+          city: string
+          country: string
+          created_at: string
+          criteria_id: string
+          state: string
+          state_abbr: string
+        }
+        Insert: {
+          area_code?: string
+          city: string
+          country: string
+          created_at?: string
+          criteria_id: string
+          state: string
+          state_abbr: string
+        }
+        Update: {
+          area_code?: string
+          city?: string
+          country?: string
+          created_at?: string
+          criteria_id?: string
+          state?: string
+          state_abbr?: string
+        }
+        Relationships: []
       }
       landing_pages: {
         Row: {
