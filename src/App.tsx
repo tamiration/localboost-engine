@@ -40,6 +40,7 @@ const App = () => (
             <Route path="/admin" element={<ProtectedRoute allowedRole="admin"><AdminLayout /></ProtectedRoute>}>
               <Route index element={<AdminDashboard />} />
               <Route path="clients" element={<AdminClients />} />
+              <Route path="clients/:clientId" element={<AdminClients />} />
               <Route path="landing-pages" element={<AdminLandingPages />} />
               <Route path="templates" element={<AdminTemplates />} />
               <Route path="analytics" element={<AdminAnalytics />} />

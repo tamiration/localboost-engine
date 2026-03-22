@@ -101,6 +101,7 @@ export type Database = {
         Row: {
           active: boolean | null
           business_name: string
+          contact_name: string | null
           country: string
           created_at: string
           default_address: string | null
@@ -108,6 +109,8 @@ export type Database = {
           default_city: string | null
           default_state: string | null
           email: string | null
+          ghl_contact_id: string | null
+          ghl_webhook_url: string | null
           has_toll_free: boolean | null
           id: string
           notes: string | null
@@ -119,6 +122,7 @@ export type Database = {
         Insert: {
           active?: boolean | null
           business_name: string
+          contact_name?: string | null
           country?: string
           created_at?: string
           default_address?: string | null
@@ -126,6 +130,8 @@ export type Database = {
           default_city?: string | null
           default_state?: string | null
           email?: string | null
+          ghl_contact_id?: string | null
+          ghl_webhook_url?: string | null
           has_toll_free?: boolean | null
           id?: string
           notes?: string | null
@@ -137,6 +143,7 @@ export type Database = {
         Update: {
           active?: boolean | null
           business_name?: string
+          contact_name?: string | null
           country?: string
           created_at?: string
           default_address?: string | null
@@ -144,6 +151,8 @@ export type Database = {
           default_city?: string | null
           default_state?: string | null
           email?: string | null
+          ghl_contact_id?: string | null
+          ghl_webhook_url?: string | null
           has_toll_free?: boolean | null
           id?: string
           notes?: string | null
