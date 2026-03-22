@@ -45,7 +45,7 @@ export default function AdminSettings() {
         const { count } = await supabase.from(t).select('*', { count: 'exact', head: true });
         totalRecords += count ?? 0;
       }
-      setDbInfo({ tables: tables.length, records: totalRecords });
+      setDbInfo({ tables: tableNames.length, records: totalRecords });
       setLoading(false);
     })();
   }, []);
