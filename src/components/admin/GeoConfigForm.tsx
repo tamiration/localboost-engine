@@ -79,13 +79,24 @@ export function GeoConfigForm({ landingPageId, clientCountry, clientDefaults }: 
     if (!testId.trim()) return;
     setTesting(true);
     setTestResult(null);
-    const table = testPlatform === 'google' ? 'google_geo_lookup' : 'bing_geo_lookup';
-    const col = testPlatform === 'google' ? 'criteria_id' : 'location_id';
-    const { data } = await supabase.from(table).select('city, state, state_abbr, country, area_code').eq(col, testId.trim()).limit(1).single();
-    if (data) {
-      setTestResult(`✅ ${data.city}, ${data.state} (${data.state_abbr}), ${data.country} — Area Code: ${data.area_code}`);
-    } else {
-      setTestResult('❌ ID not found in lookup table');
+    try {
+      if (testPlatform === 'google') {
+        const { data } = await supabase.from('google_geo_lookup').select('city, state, state_abbr, country, area_code').eq('criteria_id', testId.trim()).limit(1).single();
+        if (data) {
+          setTestResult(`✅ ${data.city}, ${data.state} (${data.state_abbr}), ${data.country} — Area Code: ${data.area_code}`);
+        } else {
+          setTestResult('❌ ID not found in lookup table');
+        }
+      } else {
+        const { data } = await supabase.from('bing_geo_lookup').select('city, state, state_abbr, country, area_code').eq('location_id', testId.trim()).limit(1).single();
+        if (data) {
+          setTestResult(`✅ ${data.city}, ${data.state} (${data.state_abbr}), ${data.country} — Area Code: ${data.area_code}`);
+        } else {
+          setTestResult('❌ ID not found in lookup table');
+        }
+      }
+    } catch {
+      setTestResult('❌ Error looking up geo ID');
     }
     setTesting(false);
   };
