@@ -39,9 +39,9 @@ export default function AdminSettings() {
       });
 
       // Get basic DB info
-      const tables = ['clients', 'landing_pages', 'analytics', 'edit_requests', 'phone_numbers', 'templates', 'subscriptions'];
+      const tableNames = ['clients', 'landing_pages', 'analytics', 'edit_requests', 'phone_numbers', 'templates', 'subscriptions'] as const;
       let totalRecords = 0;
-      for (const t of tables) {
+      for (const t of tableNames) {
         const { count } = await supabase.from(t).select('*', { count: 'exact', head: true });
         totalRecords += count ?? 0;
       }
