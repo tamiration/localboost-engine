@@ -42,6 +42,7 @@ const App = () => (
               <Route path="clients" element={<AdminClients />} />
               <Route path="clients/:clientId" element={<AdminClients />} />
               <Route path="landing-pages" element={<AdminLandingPages />} />
+              <Route path="landing-pages/:pageId" element={<AdminLandingPages />} />
               <Route path="templates" element={<AdminTemplates />} />
               <Route path="analytics" element={<AdminAnalytics />} />
               <Route path="edit-requests" element={<AdminEditRequests />} />

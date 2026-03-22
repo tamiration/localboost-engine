@@ -306,58 +306,88 @@ export type Database = {
       }
       landing_pages: {
         Row: {
+          about_text: string | null
+          after_image_url: string | null
+          before_image_url: string | null
           bing_ads_url: string | null
           client_id: string
           country: string
           created_at: string
           cta_text: string | null
           deployed: boolean | null
+          ghl_webhook_url: string | null
           google_ads_url: string | null
           headline_template: string | null
+          hero_image_url: string | null
           id: string
+          logo_url: string | null
+          maps_embed_url: string | null
+          notification_email: string | null
           page_name: string
           page_views: number | null
           phone_template: string | null
           primary_color: string | null
+          service_area_description: string | null
           subdomain: string | null
           subheadline_template: string | null
           template_type: string | null
+          verified_at: string | null
         }
         Insert: {
+          about_text?: string | null
+          after_image_url?: string | null
+          before_image_url?: string | null
           bing_ads_url?: string | null
           client_id: string
           country?: string
           created_at?: string
           cta_text?: string | null
           deployed?: boolean | null
+          ghl_webhook_url?: string | null
           google_ads_url?: string | null
           headline_template?: string | null
+          hero_image_url?: string | null
           id?: string
+          logo_url?: string | null
+          maps_embed_url?: string | null
+          notification_email?: string | null
           page_name: string
           page_views?: number | null
           phone_template?: string | null
           primary_color?: string | null
+          service_area_description?: string | null
           subdomain?: string | null
           subheadline_template?: string | null
           template_type?: string | null
+          verified_at?: string | null
         }
         Update: {
+          about_text?: string | null
+          after_image_url?: string | null
+          before_image_url?: string | null
           bing_ads_url?: string | null
           client_id?: string
           country?: string
           created_at?: string
           cta_text?: string | null
           deployed?: boolean | null
+          ghl_webhook_url?: string | null
           google_ads_url?: string | null
           headline_template?: string | null
+          hero_image_url?: string | null
           id?: string
+          logo_url?: string | null
+          maps_embed_url?: string | null
+          notification_email?: string | null
           page_name?: string
           page_views?: number | null
           phone_template?: string | null
           primary_color?: string | null
+          service_area_description?: string | null
           subdomain?: string | null
           subheadline_template?: string | null
           template_type?: string | null
+          verified_at?: string | null
         }
         Relationships: [
           {
@@ -421,6 +451,24 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      platform_settings: {
+        Row: {
+          key: string
+          updated_at: string
+          value: string
+        }
+        Insert: {
+          key: string
+          updated_at?: string
+          value: string
+        }
+        Update: {
+          key?: string
+          updated_at?: string
+          value?: string
+        }
+        Relationships: []
       }
       profiles: {
         Row: {
