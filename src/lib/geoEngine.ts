@@ -156,25 +156,28 @@ export async function lookupByGoogleId(
 
     if (!data) return null;
 
-    const targetType: string = data.target_type ?? '';
+    const targetType: string = data.target_type ?? 'City';
 
-    // Skip — fall through to next resolution layer
-    if (
-      targetType === 'Postal Code' ||
-      targetType === 'County' ||
-      targetType === 'State'
-    ) {
-      return null;
+    // Determine the display-ready location string based on target type:
+    // - City / Neighborhood / Borough → use city name directly (neighborhood uses parent city)
+    // - Postal Code → use the city column (already the parent city of that ZIP)
+    // - County → append "County" to the city column value
+    // - State → use the full state name
+    let locationDisplay: string;
+
+    if (targetType === 'State') {
+      locationDisplay = data.state;
+    } else if (targetType === 'County') {
+      locationDisplay = `${data.city} County`;
+    } else if (targetType === 'Neighborhood' || targetType === 'Borough') {
+      locationDisplay = data.parent_city || data.city;
+    } else {
+      // City, Postal Code, and any unknown types
+      locationDisplay = data.city;
     }
 
-    // Use parent city for sub-city target types
-    const city =
-      (targetType === 'Neighborhood' || targetType === 'Borough')
-        ? (data.parent_city || data.city)
-        : data.city;
-
     return {
-      city,
+      city: locationDisplay,
       state: data.state,
       state_abbr: data.state_abbr,
       country: data.country as 'US' | 'AU',
@@ -336,7 +339,7 @@ export async function resolveLocation(
 
     // Step 3 — Priority layers
 
-    // Layer 1: Location Interest
+    // Layer 1: Location Interest (loc_interest_ms) — checked first per spec
     if (params.loc_interest_ms !== '') {
       const entry = await lookupGeoId(params.loc_interest_ms, platform, supabase);
       if (entry) {
@@ -346,7 +349,7 @@ export async function resolveLocation(
       logUnknownGeoId(params.loc_interest_ms, platform, supabase);
     }
 
-    // Layer 2: Physical Location
+    // Layer 2: Physical Location (loc_physical_ms) — fallback if interest had no result
     if (params.loc_physical_ms !== '') {
       const entry = await lookupGeoId(params.loc_physical_ms, platform, supabase);
       if (entry) {
@@ -368,13 +371,22 @@ export async function resolveLocation(
         const enriched = await enrichAreaCode(entry, supabase);
         return finalise(enriched, 'adgroup_name');
       }
-      // Adgroup mode on but no match — return no_location (do NOT fall through)
-      console.warn(`[geoEngine] Adgroup lookup failed for: ${params.adgroup}`);
-      const phoneResult = resolvePhoneNumber(clientNumbers, '');
-      return buildGeoResult(null, params, platform, 'no_location', phoneResult.display_number, phoneResult.match_type);
+      // Adgroup mode on but no match — fall through to generic
     }
 
-    // Layer 3: Company Default
+    // Layer 3: URL params were present but nothing resolved → generic "Your Area"
+    if (params.loc_interest_ms !== '' || params.loc_physical_ms !== '') {
+      const genericEntry: GeoEntry = {
+        city: 'Your Area',
+        state: '',
+        state_abbr: '',
+        country: clientConfig.country,
+        area_code: clientConfig.default_area_code,
+      };
+      return finalise(genericEntry, 'no_location');
+    }
+
+    // Layer 4: No URL params at all → client default city
     const defaultEntry: GeoEntry = {
       city: clientConfig.default_city,
       state: clientConfig.default_state,
@@ -411,11 +423,17 @@ function buildTokenMap(
     service?: string;
   }
 ): TokenMap {
+  // `location` is the single natural-reading display token.
+  // It equals the city field (which already encodes the display intent:
+  // "Beverly Hills", "Los Angeles County", "California", "Your Area", etc.)
+  const location = geoResult.city ?? 'Your Area';
+
   return {
     city: geoResult.city ?? '',
     state: geoResult.state ?? '',
     state_abbr: geoResult.state_abbr ?? '',
     area_code: geoResult.area_code ?? '',
+    location,
     keyword: geoResult.keyword,
     adgroup: geoResult.adgroup,
     campaign: geoResult.campaign,
