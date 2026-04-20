@@ -49,10 +49,27 @@ export default function LandingPage() {
       }
 
       try {
+        // First find the client by subdomain
+        const { data: clientData } = await supabase
+          .from('clients')
+          .select('*')
+          .eq('subdomain', subdomain)
+          .maybeSingle();
+
+        if (!clientData) {
+          if (!cancelled) {
+            setNotFound(true);
+            setLoading(false);
+          }
+          return;
+        }
+
+        // Then find the landing page for this client
         const { data: pageData } = await supabase
           .from('landing_pages')
           .select('*')
-          .eq('subdomain', subdomain)
+          .eq('client_id', clientData.id)
+          .eq('is_published', true)
           .maybeSingle();
 
         if (!pageData) {
@@ -63,24 +80,14 @@ export default function LandingPage() {
           return;
         }
 
-        const [clientRes, phoneRes, geoCfgRes] = await Promise.all([
-          supabase.from('clients').select('*').eq('id', pageData.client_id).maybeSingle(),
-          supabase.from('phone_numbers').select('*').eq('client_id', pageData.client_id),
+        const [phoneRes, geoCfgRes] = await Promise.all([
+          supabase.from('phone_numbers').select('*').eq('client_id', clientData.id),
           supabase
             .from('geo_configs')
             .select('use_adgroup_as_city')
             .eq('landing_page_id', pageData.id)
             .maybeSingle(),
         ]);
-
-        const clientData = clientRes.data;
-        if (!clientData) {
-          if (!cancelled) {
-            setNotFound(true);
-            setLoading(false);
-          }
-          return;
-        }
 
         const numbers: PhoneNumber[] = (phoneRes.data ?? []).map(toPhoneNumber);
 
