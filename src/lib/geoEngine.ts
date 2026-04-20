@@ -149,14 +149,32 @@ export async function lookupByGoogleId(
   try {
     const { data } = await supabase
       .from('google_geo_lookup')
-      .select('city, state, state_abbr, country, area_code')
+      .select('city, state, state_abbr, country, area_code, target_type, parent_city')
       .eq('criteria_id', criteriaId)
       .limit(1)
       .maybeSingle();
 
     if (!data) return null;
+
+    const targetType: string = data.target_type ?? '';
+
+    // Skip — fall through to next resolution layer
+    if (
+      targetType === 'Postal Code' ||
+      targetType === 'County' ||
+      targetType === 'State'
+    ) {
+      return null;
+    }
+
+    // Use parent city for sub-city target types
+    const city =
+      (targetType === 'Neighborhood' || targetType === 'Borough')
+        ? (data.parent_city || data.city)
+        : data.city;
+
     return {
-      city: data.city,
+      city,
       state: data.state,
       state_abbr: data.state_abbr,
       country: data.country as 'US' | 'AU',

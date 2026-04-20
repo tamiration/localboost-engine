@@ -35,7 +35,7 @@ export function ModernTemplate({ page, client, geo }: ModernTemplateProps) {
   const headline = injectDynamicContent(rawHeadline, geo, extras);
   const subheadline = injectDynamicContent(rawSubheadline, geo, extras);
   const aboutContent = injectDynamicContent(rawAbout, geo, extras);
-  const aboutTitle = (page as any).about_title || `About ${client.business_name}`;
+  const aboutTitle = injectDynamicContent((page as any).about_title || `About ${client.business_name}`, geo, extras);
   const cta = (page as any).cta_text || 'Get Started';
 
   const primary = (page as any).primary_color || '#1E3A5F';
@@ -45,9 +45,21 @@ export function ModernTemplate({ page, client, geo }: ModernTemplateProps) {
   const phoneDigits = (geo.resolvedPhone || '').replace(/\D/g, '');
   const phoneHref = phoneDigits ? `tel:${phoneDigits}` : undefined;
 
-  // Parse features and testimonials from JSON
-  const features: Feature[] = Array.isArray((page as any).features) ? (page as any).features : [];
-  const testimonials: Testimonial[] = Array.isArray((page as any).testimonials) ? (page as any).testimonials : [];
+  // Parse features and testimonials from JSON, inject geo tokens into text fields
+  const rawFeatures: Feature[] = Array.isArray((page as any).features) ? (page as any).features : [];
+  const rawTestimonials: Testimonial[] = Array.isArray((page as any).testimonials) ? (page as any).testimonials : [];
+
+  const features: Feature[] = rawFeatures.map((f) => ({
+    ...f,
+    title: injectDynamicContent(f.title ?? '', geo, extras),
+    description: injectDynamicContent(f.description ?? '', geo, extras),
+  }));
+
+  const testimonials: Testimonial[] = rawTestimonials.map((t) => ({
+    ...t,
+    text: injectDynamicContent(t.text ?? '', geo, extras),
+    name: injectDynamicContent(t.name ?? '', geo, extras),
+  }));
 
   return (
     <div className="min-h-screen bg-white text-gray-900">
