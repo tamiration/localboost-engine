@@ -149,7 +149,7 @@ export async function lookupByGoogleId(
   try {
     const { data } = await supabase
       .from('google_geo_lookup')
-      .select('city, state, state_abbr, country, area_code, target_type, parent_city')
+      .select('city, state, state_abbr, country, area_code, target_type')
       .eq('criteria_id', criteriaId)
       .limit(1)
       .maybeSingle();
@@ -158,21 +158,15 @@ export async function lookupByGoogleId(
 
     const targetType: string = data.target_type ?? 'City';
 
-    // Determine the display-ready location string based on target type:
-    // - City / Neighborhood / Borough → use city name directly (neighborhood uses parent city)
-    // - Postal Code → use the city column (already the parent city of that ZIP)
-    // - County → append "County" to the city column value
-    // - State → use the full state name
+    // Resolve display city per target_type spec:
+    // City | Municipality | Postal Code | Neighborhood | Borough | County → city column
+    // State → state column
+    // No match (null data) → caller returns null and geoEngine falls through to "your area"
     let locationDisplay: string;
-
     if (targetType === 'State') {
       locationDisplay = data.state;
-    } else if (targetType === 'County') {
-      locationDisplay = `${data.city} County`;
-    } else if (targetType === 'Neighborhood' || targetType === 'Borough') {
-      locationDisplay = data.parent_city || data.city;
     } else {
-      // City, Postal Code, and any unknown types
+      // City, Municipality, Postal Code, Neighborhood, Borough, County — all use city column
       locationDisplay = data.city;
     }
 
@@ -374,10 +368,10 @@ export async function resolveLocation(
       // Adgroup mode on but no match — fall through to generic
     }
 
-    // Layer 3: URL params were present but nothing resolved → generic "Your Area"
+    // Layer 3: URL params were present but nothing resolved → generic "your area"
     if (params.loc_interest_ms !== '' || params.loc_physical_ms !== '') {
       const genericEntry: GeoEntry = {
-        city: 'Your Area',
+        city: 'your area',
         state: '',
         state_abbr: '',
         country: clientConfig.country,
@@ -426,7 +420,7 @@ function buildTokenMap(
   // `location` is the single natural-reading display token.
   // It equals the city field (which already encodes the display intent:
   // "Beverly Hills", "Los Angeles County", "California", "Your Area", etc.)
-  const location = geoResult.city ?? 'Your Area';
+  const location = geoResult.city ?? 'your area';
 
   return {
     city: geoResult.city ?? '',
