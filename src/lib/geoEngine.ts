@@ -485,6 +485,7 @@ function buildTokenMap(
     business_name: extras?.business_name ?? '',
     phone: extras?.phone ?? '',
     service: extras?.service ?? '',
+    service_name: extras?.service ?? '',
   };
 }
 

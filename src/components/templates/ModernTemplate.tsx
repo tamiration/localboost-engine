@@ -20,19 +20,33 @@ interface Testimonial {
 }
 
 export function ModernTemplate({ page, client, geo }: ModernTemplateProps) {
+  // service_name: prefer page-level service field, fall back to client category or business name
+  const serviceName =
+    (page as any).service_name ||
+    (page as any).service ||
+    (client as any).category ||
+    client.business_name ||
+    'Our Service';
+
   const extras = {
     business_name: client.business_name ?? '',
     phone: geo.resolvedPhone,
     city: geo.city,
     state: geo.state,
+    service: serviceName,
   };
 
-  // Support both old schema (headline_template) and new schema (headline)
-  const rawHeadline = (page as any).headline || (page as any).headline_template || '';
+  // Headline logic per spec:
+  // - city resolved → "{service_name} in {city}"
+  // - no city → "5-Star Rated {service_name} – Local & Dependable"
+  const cityResolved = geo.city && geo.city !== 'your area';
+  const headline = cityResolved
+    ? `${serviceName} in ${geo.city}`
+    : `5-Star Rated ${serviceName} – Local & Dependable`;
+
   const rawSubheadline = (page as any).subheadline || (page as any).subheadline_template || '';
   const rawAbout = (page as any).about_content || (page as any).about_text || '';
-  
-  const headline = injectDynamicContent(rawHeadline, geo, extras);
+
   const subheadline = injectDynamicContent(rawSubheadline, geo, extras);
   const aboutContent = injectDynamicContent(rawAbout, geo, extras);
   const aboutTitle = injectDynamicContent((page as any).about_title || `About ${client.business_name}`, geo, extras);
