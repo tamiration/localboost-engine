@@ -10,6 +10,7 @@ import {
 import type { PhoneNumber } from '@/lib/phoneResolver';
 import type { Tables } from '@/integrations/supabase/types';
 import GarageDoorTemplate from '@/components/templates/GarageDoorTemplate';
+import ModernTemplate from '@/components/templates/ModernTemplate';
 
 type LandingPageRow = Tables<'landing_pages'>;
 type ClientRow = Tables<'clients'>;
@@ -148,18 +149,11 @@ export default function LandingPage() {
     );
   }
 
-  if (page.template_type === 'garage_door') {
+  // Use GarageDoorTemplate for garage_door type, otherwise use ModernTemplate as default
+  if ((page as any).template_type === 'garage_door') {
     return <GarageDoorTemplate page={page} client={client} geo={geo} />;
   }
 
-  return (
-    <div className="flex min-h-screen items-center justify-center bg-muted">
-      <div className="text-center">
-        <h1 className="mb-4 text-2xl font-bold">Template unavailable</h1>
-        <p className="text-muted-foreground">
-          No renderer for template "{page.template_type ?? 'unknown'}".
-        </p>
-      </div>
-    </div>
-  );
+  // Default to ModernTemplate for all other cases (modern, classic, etc.)
+  return <ModernTemplate page={page} client={client} geo={geo} />;
 }
