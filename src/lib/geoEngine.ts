@@ -142,6 +142,51 @@ export interface GeoResult {
 
 // ---- Lookup helpers (not exported) ----
 
+/**
+ * Resolves a city name from a ZIP code using a 3-step chain:
+ * 1. zip_city_lookup table in Supabase
+ * 2. Nominatim API (OpenStreetMap)
+ * 3. null (fall through to IP geo)
+ */
+async function resolvePostalCode(
+  zip: string,
+  supabase: SupabaseClient
+): Promise<string | null> {
+  // Step 1: zip_city_lookup table
+  try {
+    const { data } = await supabase
+      .from('zip_city_lookup')
+      .select('city')
+      .eq('zip', zip.trim())
+      .limit(1)
+      .maybeSingle();
+    if (data?.city) return data.city;
+  } catch {
+    // fall through
+  }
+
+  // Step 2: Nominatim API
+  try {
+    const url = `https://nominatim.openstreetmap.org/search?postalcode=${encodeURIComponent(zip)}&country=US&format=json&limit=1`;
+    const res = await fetch(url, {
+      headers: { 'User-Agent': 'LocalBoostEngine/1.0' },
+    });
+    if (res.ok) {
+      const json: Array<{ display_name?: string }> = await res.json();
+      if (json.length > 0 && json[0].display_name) {
+        // display_name format: "City, County, State, ZIP, United States"
+        const city = json[0].display_name.split(',')[0].trim();
+        if (city) return city;
+      }
+    }
+  } catch {
+    // fall through
+  }
+
+  // Step 3: both failed
+  return null;
+}
+
 export async function lookupByGoogleId(
   criteriaId: string,
   supabase: SupabaseClient
@@ -158,15 +203,18 @@ export async function lookupByGoogleId(
 
     const targetType: string = data.target_type ?? 'City';
 
-    // Resolve display city per target_type spec:
-    // City | Municipality | Postal Code | Neighborhood | Borough | County → city column
-    // State → state column
-    // No match (null data) → caller returns null and geoEngine falls through to "your area"
     let locationDisplay: string;
+
     if (targetType === 'State') {
+      // State → use the state column
       locationDisplay = data.state;
+    } else if (targetType === 'Postal Code') {
+      // Postal Code → the city column holds the ZIP value; resolve via chain
+      const resolved = await resolvePostalCode(data.city, supabase);
+      if (!resolved) return null; // fall through to IP geo
+      locationDisplay = resolved;
     } else {
-      // City, Municipality, Postal Code, Neighborhood, Borough, County — all use city column
+      // City | Municipality | Neighborhood | Borough | County → city column directly
       locationDisplay = data.city;
     }
 
