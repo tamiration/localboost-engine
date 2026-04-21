@@ -74,7 +74,7 @@ export default function Onboarding() {
   });
   const [step3, setStep3] = useState<PhoneEntry[]>([]);
   const [step4, setStep4] = useState<LandingPageSetup>({
-    subdomain: '', primaryColor: '#1a1a2e', fallbackHeadlineStyle: 'A', customHeadline: '',
+    subdomain: '', fallbackHeadlineStyle: 'A', customHeadline: '',
   });
 
   const serviceName = step2.verticals.map((v) => VERTICAL_LABELS[v] ?? v).join(' & ') || 'Your Service';
@@ -166,7 +166,6 @@ export default function Onboarding() {
           headline: `{service_name} in {location}`,
           subheadline: `Serving {location} with expert ${serviceName.toLowerCase()} services.`,
           cta_text: 'Call Us Now',
-          primary_color: step4.primaryColor,
           theme_style: 'modern',
           service_name: serviceName,
           fallback_headline: fallbackHeadline,

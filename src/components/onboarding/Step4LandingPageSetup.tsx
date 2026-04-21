@@ -2,9 +2,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
 
+
 export interface LandingPageSetup {
   subdomain: string;
-  primaryColor: string;
   fallbackHeadlineStyle: 'A' | 'B' | 'custom';
   customHeadline: string;
 }
@@ -42,9 +42,6 @@ const TEMPLATE_MAP: Record<string, string> = {
 };
 
 export function Step4LandingPageSetup({ data, onChange, serviceName }: Props) {
-  const set = (field: keyof LandingPageSetup) => (value: string) =>
-    onChange({ ...data, [field]: value });
-
   const liveUrl = data.subdomain
     ? `https://localboost-engine.vercel.app/p/${data.subdomain.toLowerCase().replace(/\s+/g, '-')}`
     : '';
@@ -79,26 +76,6 @@ export function Step4LandingPageSetup({ data, onChange, serviceName }: Props) {
           {liveUrl && (
             <p className="truncate text-xs text-primary">{liveUrl}</p>
           )}
-        </div>
-
-        {/* Brand color */}
-        <div className="space-y-2">
-          <Label htmlFor="primaryColor">Brand Primary Color</Label>
-          <div className="flex items-center gap-3">
-            <input
-              id="primaryColor"
-              type="color"
-              value={data.primaryColor}
-              onChange={(e) => set('primaryColor')(e.target.value)}
-              className="h-10 w-16 cursor-pointer rounded-md border border-border bg-card p-1"
-            />
-            <Input
-              value={data.primaryColor}
-              onChange={(e) => set('primaryColor')(e.target.value)}
-              placeholder="#1a1a2e"
-              className="max-w-[140px] font-mono text-sm"
-            />
-          </div>
         </div>
 
         {/* Fallback headline */}

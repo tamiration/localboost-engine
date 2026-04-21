@@ -64,9 +64,13 @@ export function Step5Review({ step1, step2, step3, step4 }: Props) {
         <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
           Service & Location
         </h3>
-        <ReviewRow label="Vertical" value={VERTICAL_LABELS[step2.vertical] ?? step2.vertical} />
+        <ReviewRow
+          label="Verticals"
+          value={step2.verticals.map((v) => VERTICAL_LABELS[v] ?? v).join(', ')}
+        />
+        <ReviewRow label="Address" value={step2.fullAddress} />
         <ReviewRow label="Default City" value={step2.defaultCity} />
-        <ReviewRow label="State" value={step2.state} />
+        <ReviewRow label="Regions" value={step2.states.join(', ')} />
       </section>
 
       {/* Phone Numbers */}
@@ -77,18 +81,15 @@ export function Step5Review({ step1, step2, step3, step4 }: Props) {
         {step3.length === 0 ? (
           <p className="text-sm text-muted-foreground">None added.</p>
         ) : (
-          step3.map((p, i) => (
-            <div key={p.id} className="py-2 border-b border-border last:border-0">
+          step3.map((p) => (
+            <div key={p.vertical} className="py-2 border-b border-border last:border-0">
               <div className="flex items-center justify-between">
+                <span className="text-sm text-muted-foreground">{p.verticalLabel}</span>
                 <span className="text-sm font-medium text-foreground">
                   {p.phoneNumber}
                   {p.isDefault && (
                     <span className="ml-2 text-xs text-primary">(default)</span>
                   )}
-                </span>
-                <span className="text-xs text-muted-foreground">
-                  {p.areaCode && `AC: ${p.areaCode}`}
-                  {p.label && ` · ${p.label}`}
                 </span>
               </div>
             </div>
@@ -105,7 +106,6 @@ export function Step5Review({ step1, step2, step3, step4 }: Props) {
           label="URL"
           value={step4.subdomain ? `https://localboost-engine.vercel.app/p/${step4.subdomain}` : ''}
         />
-        <ReviewRow label="Brand Color" value={step4.primaryColor} />
         <ReviewRow
           label="Fallback Headline"
           value={

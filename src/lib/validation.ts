@@ -124,9 +124,9 @@ export function validatePassword(password: string): string | null {
 export function validatePhone(phone: string, country: SupportedCountry): string | null {
   if (!phone.trim()) return 'Phone number is required.';
   const digits = phone.replace(/\D/g, '');
-  if (digits.length < 7) return `Enter a valid phone number. Example: ${PHONE_EXAMPLES[country]}`;
-  if (!PHONE_PATTERNS[country].test(phone.trim())) {
-    return `Enter a valid ${country} phone number. Example: ${PHONE_EXAMPLES[country]}`;
+  const required = PHONE_MAX_DIGITS[country];
+  if (digits.length < required) {
+    return `Enter a complete ${country === 'US' || country === 'CA' ? '10-digit' : ''} phone number. Example: ${PHONE_EXAMPLES[country]}`;
   }
   return null;
 }
