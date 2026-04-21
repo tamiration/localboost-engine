@@ -1,5 +1,5 @@
-import { Navigate } from 'react-router-dom';
+import Homepage from './Homepage';
 
 export default function Index() {
-  return <Navigate to="/login" replace />;
+  return <Homepage />;
 }

@@ -24,6 +24,7 @@ import DnsSetup from "@/pages/client/DnsSetup";
 import Billing from "@/pages/client/Billing";
 import NotFound from "@/pages/NotFound";
 import Onboarding from "@/pages/Onboarding";
+import Index from "@/pages/Index";
 
 const queryClient = new QueryClient();
 
@@ -35,7 +36,7 @@ const App = () => (
       <BrowserRouter>
         <AuthProvider>
           <Routes>
-            <Route path="/" element={<Navigate to="/login" replace />} />
+            <Route path="/" element={<Index />} />
             <Route path="/login" element={<Login />} />
             <Route path="/waiting" element={<WaitingForAccess />} />
 
@@ -60,7 +61,6 @@ const App = () => (
             </Route>
             <Route path="/onboarding" element={<Onboarding />} />
             <Route path="/p/:subdomain" element={<LandingPage />} />
-            <Route path="*" element={<NotFound />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>
