@@ -193,11 +193,18 @@ export default function Onboarding() {
       toast({ title: 'Account created!', description: 'Your landing page is live. Redirecting...' });
       navigate(`/p/${step4.subdomain}`);
     } catch (err: any) {
-      toast({
-        title: 'Something went wrong',
-        description: err?.message ?? 'Please try again.',
-        variant: 'destructive',
-      });
+      const msg: string = err?.message ?? '';
+      let description = 'Please try again.';
+
+      if (msg.toLowerCase().includes('already registered') || msg.toLowerCase().includes('user already')) {
+        description = 'An account with this email already exists. Please sign in instead.';
+      } else if (msg.toLowerCase().includes('security purposes') || msg.toLowerCase().includes('after')) {
+        description = 'Too many attempts. Please wait 60 seconds before trying again.';
+      } else if (msg) {
+        description = msg;
+      }
+
+      toast({ title: 'Something went wrong', description, variant: 'destructive' });
     } finally {
       setSubmitting(false);
     }
