@@ -11,6 +11,7 @@ interface AuthContextType {
   role: AppRole | null;
   loading: boolean;
   signInWithGoogle: () => Promise<{ error: Error | null }>;
+  signInWithEmail: (email: string, password: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
 }
 
@@ -104,6 +105,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const signInWithEmail = async (email: string, password: string) => {
+    try {
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) return { error: error as Error };
+      return { error: null };
+    } catch (error) {
+      return { error: error instanceof Error ? error : new Error('Sign-in failed') };
+    }
+  };
+
   const signOut = async () => {
     try {
       await supabase.auth.signOut({ scope: 'local' });
@@ -117,7 +128,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, session, role, loading, signInWithGoogle, signOut }}>
+    <AuthContext.Provider value={{ user, session, role, loading, signInWithGoogle, signInWithEmail, signOut }}>
       {children}
     </AuthContext.Provider>
   );

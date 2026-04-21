@@ -5,6 +5,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Step1BusinessInfo, type BusinessInfo } from '@/components/onboarding/Step1BusinessInfo';
 import { Step2ServiceVertical, type ServiceInfo } from '@/components/onboarding/Step2ServiceVertical';
+import { validateEmail, validatePassword, validatePhone, validateZip } from '@/lib/validation';
 import { Step3PhoneNumbers, type PhoneEntry } from '@/components/onboarding/Step3PhoneNumbers';
 import { Step4LandingPageSetup, type LandingPageSetup, TEMPLATE_MAP } from '@/components/onboarding/Step4LandingPageSetup';
 import { Step5Review } from '@/components/onboarding/Step5Review';
@@ -29,14 +30,19 @@ const VERTICAL_LABELS: Record<string, string> = {
 function validateStep(step: number, s1: BusinessInfo, s2: ServiceInfo, s3: PhoneEntry[], s4: LandingPageSetup): string | null {
   if (step === 1) {
     if (!s1.businessName.trim()) return 'Business name is required.';
-    if (!s1.email.trim() || !s1.email.includes('@')) return 'A valid email is required.';
-    if (!s1.password || s1.password.length < 8) return 'Password must be at least 8 characters.';
-    if (!s1.mainPhone.trim()) return 'Main phone number is required.';
+    const emailErr = validateEmail(s1.email);
+    if (emailErr) return emailErr;
+    const passErr = validatePassword(s1.password);
+    if (passErr) return passErr;
+    const phoneErr = validatePhone(s1.mainPhone, s1.country);
+    if (phoneErr) return phoneErr;
   }
   if (step === 2) {
     if (!s2.vertical) return 'Please select a service vertical.';
     if (!s2.defaultCity.trim()) return 'Default city is required.';
-    if (!s2.state) return 'Please select a state.';
+    if (!s2.state) return 'Please select a region.';
+    const zipErr = validateZip(s2.zip, s1.country);
+    if (zipErr) return zipErr;
   }
   if (step === 4) {
     if (!s4.subdomain.trim()) return 'Subdomain is required.';
@@ -54,10 +60,10 @@ export default function Onboarding() {
   const [submitting, setSubmitting] = useState(false);
 
   const [step1, setStep1] = useState<BusinessInfo>({
-    businessName: '', ownerName: '', email: '', password: '', mainPhone: '',
+    businessName: '', ownerName: '', email: '', password: '', mainPhone: '', country: 'US',
   });
   const [step2, setStep2] = useState<ServiceInfo>({
-    vertical: '', defaultCity: '', state: '',
+    vertical: '', defaultCity: '', state: '', zip: '',
   });
   const [step3, setStep3] = useState<PhoneEntry[]>([]);
   const [step4, setStep4] = useState<LandingPageSetup>({
@@ -110,6 +116,8 @@ export default function Onboarding() {
           contact_phone: step1.mainPhone,
           city: step2.defaultCity,
           state: step2.state,
+          zip_code: step2.zip,
+          country: step1.country,
           category: step2.vertical,
           industry: step2.vertical,
           service_verticals: [step2.vertical],
@@ -232,7 +240,7 @@ export default function Onboarding() {
         {/* Step content */}
         <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
           {step === 1 && <Step1BusinessInfo data={step1} onChange={setStep1} />}
-          {step === 2 && <Step2ServiceVertical data={step2} onChange={setStep2} />}
+          {step === 2 && <Step2ServiceVertical data={step2} country={step1.country} onChange={setStep2} />}
           {step === 3 && <Step3PhoneNumbers data={step3} onChange={setStep3} />}
           {step === 4 && (
             <Step4LandingPageSetup data={step4} onChange={setStep4} serviceName={serviceName} />
