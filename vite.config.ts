@@ -11,6 +11,8 @@ export default defineConfig(({ mode }) => ({
     hmr: {
       overlay: false,
     },
+    // Serve index.html for all 404s so React Router handles navigation
+    fs: { strict: false },
   },
   plugins: [react(), mode === "development" && componentTagger()].filter(Boolean),
   resolve: {
