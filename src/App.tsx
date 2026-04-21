@@ -1,6 +1,7 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import LandingPage from "@/pages/LandingPage";
-import { BrowserRouter, Route, Routes, Navigate } from "react-router-dom";
+import Homepage from "@/pages/Homepage";
+import { BrowserRouter, Route, Routes } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -35,7 +36,7 @@ const App = () => (
       <BrowserRouter>
         <AuthProvider>
           <Routes>
-            <Route path="/" element={<Navigate to="/login" replace />} />
+            <Route path="/" element={<Homepage />} />
             <Route path="/login" element={<Login />} />
             <Route path="/waiting" element={<WaitingForAccess />} />
 
