@@ -277,26 +277,30 @@ export default function Onboarding() {
         </div>
 
         {/* Navigation */}
-        <div className="mt-6 flex items-center justify-between">
-          <Button variant="outline" onClick={goBack} disabled={step === 1}>
+        <div className="mt-6 flex items-center justify-between rounded-xl border border-border bg-card px-6 py-4 shadow-sm">
+          <Button
+            variant="outline"
+            onClick={goBack}
+            disabled={step === 1}
+            data-nav="back"
+          >
             Back
           </Button>
 
+          <p className="text-xs text-muted-foreground">
+            Step {step} of {STEPS.length}
+          </p>
+
           {step < 5 ? (
-            <Button onClick={goNext}>
+            <Button onClick={goNext} data-nav="continue">
               Continue
             </Button>
           ) : (
-            <Button onClick={handleSubmit} disabled={submitting}>
+            <Button onClick={handleSubmit} disabled={submitting} data-nav="submit">
               {submitting ? 'Creating Account...' : 'Create Account'}
             </Button>
           )}
         </div>
-
-        {/* Step counter */}
-        <p className="mt-4 text-center text-xs text-muted-foreground">
-          Step {step} of {STEPS.length}
-        </p>
       </div>
     </div>
   );
