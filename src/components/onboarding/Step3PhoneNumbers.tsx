@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
-import { validatePhone, type SupportedCountry } from '@/lib/validation';
+import { validatePhone, formatPhoneInput, getPhoneExample, type SupportedCountry } from '@/lib/validation';
 import { Phone } from 'lucide-react';
 
 export interface PhoneEntry {
@@ -78,9 +78,9 @@ export function Step3PhoneNumbers({ data, country, onChange }: Props) {
                 <Input
                   id={`phone-${entry.vertical}`}
                   type="tel"
-                  placeholder={country === 'US' || country === 'CA' ? '(555) 000-0000' : '+44 20 0000 0000'}
+                  placeholder={getPhoneExample(country)}
                   value={entry.phoneNumber}
-                  onChange={(e) => update(entry.vertical, e.target.value)}
+                  onChange={(e) => update(entry.vertical, formatPhoneInput(e.target.value, country))}
                   onBlur={() => touch(entry.vertical)}
                   className={cn(error ? 'border-destructive' : '')}
                 />

@@ -150,3 +150,64 @@ export function getZipExample(country: SupportedCountry): string {
 export function getPhoneExample(country: SupportedCountry): string {
   return PHONE_EXAMPLES[country];
 }
+
+// Max number of digits allowed per country (excluding country code)
+const PHONE_MAX_DIGITS: Record<SupportedCountry, number> = {
+  US: 10,
+  CA: 10,
+  AU: 10,
+  IL: 9,
+  GB: 11,
+};
+
+export function getPhoneMaxLength(country: SupportedCountry): number {
+  return PHONE_MAX_DIGITS[country];
+}
+
+/**
+ * Strips non-digits, caps at the country max, then formats:
+ * US/CA: (555) 000-0000
+ * AU:    04 0000 0000
+ * IL:    050-000-0000
+ * GB:    07700 900000
+ */
+export function formatPhoneInput(raw: string, country: SupportedCountry): string {
+  const max = PHONE_MAX_DIGITS[country];
+  const digits = raw.replace(/\D/g, '').slice(0, max);
+
+  if (country === 'US' || country === 'CA') {
+    const a = digits.slice(0, 3);
+    const b = digits.slice(3, 6);
+    const c = digits.slice(6, 10);
+    if (digits.length <= 3) return a;
+    if (digits.length <= 6) return `(${a}) ${b}`;
+    return `(${a}) ${b}-${c}`;
+  }
+
+  if (country === 'AU') {
+    const a = digits.slice(0, 2);
+    const b = digits.slice(2, 6);
+    const c = digits.slice(6, 10);
+    if (digits.length <= 2) return a;
+    if (digits.length <= 6) return `${a} ${b}`;
+    return `${a} ${b} ${c}`;
+  }
+
+  if (country === 'IL') {
+    const a = digits.slice(0, 3);
+    const b = digits.slice(3, 6);
+    const c = digits.slice(6, 9);
+    if (digits.length <= 3) return a;
+    if (digits.length <= 6) return `${a}-${b}`;
+    return `${a}-${b}-${c}`;
+  }
+
+  if (country === 'GB') {
+    const a = digits.slice(0, 5);
+    const b = digits.slice(5, 11);
+    if (digits.length <= 5) return a;
+    return `${a} ${b}`;
+  }
+
+  return digits;
+}

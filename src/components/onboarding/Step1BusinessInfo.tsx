@@ -12,6 +12,7 @@ import {
   validateEmail,
   validatePassword,
   validatePhone,
+  formatPhoneInput,
   COUNTRIES,
   getPhoneExample,
   type SupportedCountry,
@@ -155,7 +156,10 @@ export function Step1BusinessInfo({ data, onChange }: Props) {
             type="tel"
             placeholder={getPhoneExample(data.country)}
             value={data.mainPhone}
-            onChange={set('mainPhone')}
+            onChange={(e) => onChange({
+              ...data,
+              mainPhone: formatPhoneInput(e.target.value, data.country),
+            })}
             onBlur={touch('mainPhone')}
             className={errors.mainPhone ? 'border-destructive focus-visible:ring-destructive' : ''}
           />
