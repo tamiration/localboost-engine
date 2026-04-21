@@ -9,8 +9,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Skeleton } from '@/components/ui/skeleton';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
+import { Separator } from '@/components/ui/separator';
 import { toast } from '@/hooks/use-toast';
-import { Search, Plus, ShieldCheck, User } from 'lucide-react';
+import { Search, Plus, ShieldCheck, User, UserPlus } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 
 type AppRole = 'admin' | 'client';
@@ -19,9 +20,16 @@ interface UserRow {
   user_id: string;
   role: AppRole;
   created_at: string;
-  // joined from clients
   email: string | null;
   business_name: string | null;
+}
+
+interface NewClientForm {
+  email: string;
+  password: string;
+  businessName: string;
+  ownerName: string;
+  phone: string;
 }
 
 export default function UserManagement() {
@@ -31,11 +39,20 @@ export default function UserManagement() {
   const [roleFilter, setRoleFilter] = useState<'all' | AppRole>('all');
   const [saving, setSaving] = useState<string | null>(null);
 
-  // Add user dialog
+  // Assign role dialog
   const [showAdd, setShowAdd] = useState(false);
   const [addEmail, setAddEmail] = useState('');
   const [addRole, setAddRole] = useState<AppRole>('client');
   const [addLoading, setAddLoading] = useState(false);
+
+  // New client dialog
+  const [showNewClient, setShowNewClient] = useState(false);
+  const [newClientLoading, setNewClientLoading] = useState(false);
+  const [newClient, setNewClient] = useState<NewClientForm>({
+    email: '', password: '', businessName: '', ownerName: '', phone: '',
+  });
+  const setNC = (field: keyof NewClientForm) => (e: React.ChangeEvent<HTMLInputElement>) =>
+    setNewClient(prev => ({ ...prev, [field]: e.target.value }));
 
   const fetchUsers = useCallback(async () => {
     setLoading(true);
@@ -164,6 +181,60 @@ export default function UserManagement() {
     setAddLoading(false);
   };
 
+  const handleCreateClient = async () => {
+    const { email, password, businessName, ownerName, phone } = newClient;
+    if (!email.trim() || !password.trim() || !businessName.trim()) {
+      toast({ title: 'Email, password and business name are required.', variant: 'destructive' });
+      return;
+    }
+    setNewClientLoading(true);
+    try {
+      // 1. Create auth user
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email: email.trim(),
+        password,
+        options: { data: { full_name: ownerName, business_name: businessName } },
+      });
+      if (authError) throw authError;
+      const userId = authData.user?.id;
+      if (!userId) throw new Error('Failed to create auth user');
+
+      // 2. Insert client row
+      const { data: client, error: clientError } = await supabase
+        .from('clients')
+        .insert({
+          business_name: businessName.trim(),
+          contact_email: email.trim(),
+          contact_phone: phone.trim(),
+          status: 'active',
+          user_id: userId,
+        })
+        .select('id')
+        .single();
+      if (clientError) throw clientError;
+
+      // 3. Assign client role
+      const { error: roleError } = await supabase
+        .from('user_roles')
+        .insert({ user_id: userId, role: 'client' });
+      if (roleError) throw roleError;
+
+      toast({ title: 'Client created', description: `${businessName} (${email}) added successfully.` });
+      setShowNewClient(false);
+      setNewClient({ email: '', password: '', businessName: '', ownerName: '', phone: '' });
+      fetchUsers();
+    } catch (err: any) {
+      const msg: string = err?.message ?? '';
+      let description = msg || 'Please try again.';
+      if (msg.toLowerCase().includes('already registered') || msg.toLowerCase().includes('user already')) {
+        description = 'An account with this email already exists.';
+      }
+      toast({ title: 'Failed to create client', description, variant: 'destructive' });
+    } finally {
+      setNewClientLoading(false);
+    }
+  };
+
   const filtered = users.filter(u => {
     const matchesRole = roleFilter === 'all' || u.role === roleFilter;
     const matchesSearch =
@@ -178,10 +249,16 @@ export default function UserManagement() {
     <div className="space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-4">
         <h1 className="text-2xl font-bold text-foreground">User Management</h1>
-        <Button onClick={() => setShowAdd(true)}>
-          <Plus className="h-4 w-4 mr-2" />
-          Assign Role
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" onClick={() => setShowAdd(true)}>
+            <Plus className="h-4 w-4 mr-2" />
+            Assign Role
+          </Button>
+          <Button onClick={() => setShowNewClient(true)}>
+            <UserPlus className="h-4 w-4 mr-2" />
+            New Client
+          </Button>
+        </div>
       </div>
 
       {/* Filters */}
@@ -288,7 +365,49 @@ export default function UserManagement() {
         </Table>
       )}
 
-      {/* Add / Assign Role Dialog */}
+      {/* New Client Dialog */}
+      <Dialog open={showNewClient} onOpenChange={setShowNewClient}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Add New Client</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="space-y-1.5">
+              <Label htmlFor="nc-business">Business Name <span className="text-destructive">*</span></Label>
+              <Input id="nc-business" placeholder="Acme Garage Door LLC" value={newClient.businessName} onChange={setNC('businessName')} />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="nc-owner">Owner Name</Label>
+              <Input id="nc-owner" placeholder="John Smith" value={newClient.ownerName} onChange={setNC('ownerName')} />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="nc-phone">Phone Number</Label>
+              <Input id="nc-phone" type="tel" placeholder="(555) 000-0000" value={newClient.phone} onChange={setNC('phone')} />
+            </div>
+            <Separator />
+            <p className="text-xs text-muted-foreground">Login credentials for the client</p>
+            <div className="space-y-1.5">
+              <Label htmlFor="nc-email">Email <span className="text-destructive">*</span></Label>
+              <Input id="nc-email" type="email" placeholder="client@example.com" value={newClient.email} onChange={setNC('email')} />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="nc-password">Password <span className="text-destructive">*</span></Label>
+              <Input id="nc-password" type="password" placeholder="Min 8 characters" value={newClient.password} onChange={setNC('password')} />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowNewClient(false)}>Cancel</Button>
+            <Button
+              onClick={handleCreateClient}
+              disabled={newClientLoading || !newClient.email.trim() || !newClient.password.trim() || !newClient.businessName.trim()}
+            >
+              {newClientLoading ? 'Creating...' : 'Create Client'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Assign Role Dialog */}
       <Dialog open={showAdd} onOpenChange={setShowAdd}>
         <DialogContent className="max-w-sm">
           <DialogHeader>
