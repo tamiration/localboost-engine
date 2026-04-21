@@ -17,6 +17,7 @@ import AdminTemplates from "@/pages/admin/Templates";
 import AdminAnalytics from "@/pages/admin/Analytics";
 import AdminEditRequests from "@/pages/admin/EditRequests";
 import AdminSettings from "@/pages/admin/AdminSettings";
+import UserManagement from "@/pages/admin/UserManagement";
 import MyLandingPages from "@/pages/client/MyLandingPages";
 import ClientAnalytics from "@/pages/client/ClientAnalytics";
 import ClientEditRequests from "@/pages/client/ClientEditRequests";
@@ -50,6 +51,7 @@ const App = () => (
               <Route path="analytics" element={<AdminAnalytics />} />
               <Route path="edit-requests" element={<AdminEditRequests />} />
               <Route path="settings" element={<AdminSettings />} />
+              <Route path="users" element={<UserManagement />} />
             </Route>
 
             <Route path="/client" element={<ProtectedRoute allowedRole="client"><ClientLayout /></ProtectedRoute>}>

@@ -1,4 +1,4 @@
-import { LayoutDashboard, Users, FileText, Layers, BarChart3, MessageSquare, Settings, LogOut } from 'lucide-react';
+import { LayoutDashboard, Users, FileText, Layers, BarChart3, MessageSquare, Settings, LogOut, ShieldCheck } from 'lucide-react';
 import { NavLink } from '@/components/NavLink';
 import { useAuth } from '@/hooks/useAuth';
 import {
@@ -21,6 +21,7 @@ const navItems = [
   { title: 'Templates', url: '/admin/templates', icon: Layers },
   { title: 'Analytics', url: '/admin/analytics', icon: BarChart3 },
   { title: 'Edit Requests', url: '/admin/edit-requests', icon: MessageSquare },
+  { title: 'Users', url: '/admin/users', icon: ShieldCheck },
   { title: 'Settings', url: '/admin/settings', icon: Settings },
 ];
 
