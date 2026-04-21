@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Navigate } from 'react-router-dom';
+import { Navigate, Link } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 
@@ -63,6 +63,21 @@ export default function Login() {
           <p className="text-center text-xs text-muted-foreground">
             Sign in with your Google account to get started
           </p>
+
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center">
+              <span className="w-full border-t border-border" />
+            </div>
+            <div className="relative flex justify-center text-xs uppercase">
+              <span className="bg-card px-2 text-muted-foreground">or</span>
+            </div>
+          </div>
+
+          <Link to="/onboarding">
+            <Button variant="ghost" className="w-full">
+              Create a free account
+            </Button>
+          </Link>
         </div>
       </div>
     </div>

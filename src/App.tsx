@@ -23,6 +23,7 @@ import ClientEditRequests from "@/pages/client/ClientEditRequests";
 import DnsSetup from "@/pages/client/DnsSetup";
 import Billing from "@/pages/client/Billing";
 import NotFound from "@/pages/NotFound";
+import Onboarding from "@/pages/Onboarding";
 
 const queryClient = new QueryClient();
 
@@ -57,6 +58,7 @@ const App = () => (
               <Route path="dns-setup" element={<DnsSetup />} />
               <Route path="billing" element={<Billing />} />
             </Route>
+            <Route path="/onboarding" element={<Onboarding />} />
             <Route path="/p/:subdomain" element={<LandingPage />} />
             <Route path="*" element={<NotFound />} />
             <Route path="*" element={<NotFound />} />
