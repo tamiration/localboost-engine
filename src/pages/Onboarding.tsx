@@ -38,9 +38,9 @@ function validateStep(step: number, s1: BusinessInfo, s2: ServiceInfo, s3: Phone
     if (phoneErr) return phoneErr;
   }
   if (step === 2) {
-    if (!s2.vertical) return 'Please select a service vertical.';
-    if (!s2.defaultCity.trim()) return 'Default city is required.';
-    if (!s2.state) return 'Please select a region.';
+    if (!s2.verticals || s2.verticals.length === 0) return 'Please select at least one service vertical.';
+    if (!s2.fullAddress.trim()) return 'Business address is required.';
+    if (!s2.states || s2.states.length === 0) return 'Please select at least one region.';
     const zipErr = validateZip(s2.zip, s1.country);
     if (zipErr) return zipErr;
   }
@@ -63,14 +63,14 @@ export default function Onboarding() {
     businessName: '', ownerName: '', email: '', password: '', mainPhone: '', country: 'US',
   });
   const [step2, setStep2] = useState<ServiceInfo>({
-    vertical: '', defaultCity: '', state: '', zip: '',
+    verticals: [], fullAddress: '', defaultCity: '', states: [], zip: '',
   });
   const [step3, setStep3] = useState<PhoneEntry[]>([]);
   const [step4, setStep4] = useState<LandingPageSetup>({
     subdomain: '', primaryColor: '#1a1a2e', fallbackHeadlineStyle: 'A', customHeadline: '',
   });
 
-  const serviceName = VERTICAL_LABELS[step2.vertical] ?? 'Your Service';
+  const serviceName = step2.verticals.map((v) => VERTICAL_LABELS[v] ?? v).join(' & ') || 'Your Service';
 
   const goNext = () => {
     const err = validateStep(step, step1, step2, step3, step4);
@@ -114,13 +114,14 @@ export default function Onboarding() {
           business_name: step1.businessName,
           contact_email: step1.email,
           contact_phone: step1.mainPhone,
+          address: step2.fullAddress,
           city: step2.defaultCity,
-          state: step2.state,
+          state: step2.states[0] ?? '',
           zip_code: step2.zip,
           country: step1.country,
-          category: step2.vertical,
-          industry: step2.vertical,
-          service_verticals: [step2.vertical],
+          category: step2.verticals[0] ?? '',
+          industry: step2.verticals[0] ?? '',
+          service_verticals: step2.verticals,
           status: 'active',
           user_id: user?.id ?? null,
         })
