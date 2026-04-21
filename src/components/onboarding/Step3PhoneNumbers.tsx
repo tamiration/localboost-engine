@@ -1,47 +1,37 @@
-import { Button } from '@/components/ui/button';
+import { useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
+import { validatePhone, type SupportedCountry } from '@/lib/validation';
+import { Phone } from 'lucide-react';
 
 export interface PhoneEntry {
-  id: string;
+  vertical: string;
+  verticalLabel: string;
   phoneNumber: string;
-  areaCode: string;
-  label: string;
   isDefault: boolean;
 }
 
 interface Props {
   data: PhoneEntry[];
+  country: SupportedCountry;
   onChange: (data: PhoneEntry[]) => void;
 }
 
-function newEntry(): PhoneEntry {
-  return { id: crypto.randomUUID(), phoneNumber: '', areaCode: '', label: '', isDefault: false };
-}
+export function Step3PhoneNumbers({ data, country, onChange }: Props) {
+  const [touched, setTouched] = useState<Record<string, boolean>>({});
 
-export function Step3PhoneNumbers({ data, onChange }: Props) {
-  const add = () => {
-    const entry = newEntry();
-    if (data.length === 0) entry.isDefault = true;
-    onChange([...data, entry]);
+  const touch = (vertical: string) =>
+    setTouched((t) => ({ ...t, [vertical]: true }));
+
+  const update = (vertical: string, phoneNumber: string) => {
+    onChange(data.map((e) => (e.vertical === vertical ? { ...e, phoneNumber } : e)));
   };
 
-  const remove = (id: string) => {
-    const remaining = data.filter((e) => e.id !== id);
-    // if we removed the default, assign default to first remaining
-    if (remaining.length > 0 && !remaining.some((e) => e.isDefault)) {
-      remaining[0].isDefault = true;
-    }
-    onChange(remaining);
-  };
-
-  const update = (id: string, field: keyof PhoneEntry, value: string | boolean) => {
-    onChange(data.map((e) => (e.id === id ? { ...e, [field]: value } : e)));
-  };
-
-  const setDefault = (id: string) => {
-    onChange(data.map((e) => ({ ...e, isDefault: e.id === id })));
+  const getError = (entry: PhoneEntry) => {
+    if (!touched[entry.vertical]) return undefined;
+    if (!entry.phoneNumber.trim()) return 'Phone number is required.';
+    return validatePhone(entry.phoneNumber, country) ?? undefined;
   };
 
   return (
@@ -49,96 +39,67 @@ export function Step3PhoneNumbers({ data, onChange }: Props) {
       <div>
         <h2 className="text-xl font-semibold text-foreground">Phone Numbers</h2>
         <p className="mt-1 text-sm text-muted-foreground">
-          Add the phone numbers you want displayed on your landing pages.
+          Assign a dedicated tracking number to each service. Visitors will see
+          the number matching the service they found you through.
         </p>
       </div>
 
-      <div className="space-y-3">
-        {data.length === 0 && (
-          <p className="rounded-lg border border-dashed border-border p-4 text-center text-sm text-muted-foreground">
-            No phone numbers added yet. Click below to add one.
-          </p>
-        )}
-
-        {data.map((entry, idx) => (
-          <div
-            key={entry.id}
-            className={cn(
-              'rounded-lg border p-4 space-y-3',
-              entry.isDefault ? 'border-primary/50 bg-primary/5' : 'border-border bg-card'
-            )}
-          >
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-medium text-foreground">
-                Number {idx + 1}
-                {entry.isDefault && (
-                  <span className="ml-2 rounded-full bg-primary/20 px-2 py-0.5 text-xs text-primary">
+      <div className="space-y-4">
+        {data.map((entry, idx) => {
+          const error = getError(entry);
+          return (
+            <div
+              key={entry.vertical}
+              className={cn(
+                'rounded-lg border p-4 space-y-3 transition-colors',
+                idx === 0
+                  ? 'border-primary/40 bg-primary/5'
+                  : 'border-border bg-card'
+              )}
+            >
+              {/* Vertical label + default badge */}
+              <div className="flex items-center gap-2">
+                <Phone className="h-4 w-4 text-muted-foreground" />
+                <span className="text-sm font-semibold text-foreground">
+                  {entry.verticalLabel}
+                </span>
+                {idx === 0 && (
+                  <span className="ml-auto rounded-full bg-primary/20 px-2 py-0.5 text-xs font-medium text-primary">
                     Default
                   </span>
                 )}
-              </span>
-              <div className="flex items-center gap-2">
-                {!entry.isDefault && (
-                  <button
-                    type="button"
-                    onClick={() => setDefault(entry.id)}
-                    className="text-xs text-muted-foreground underline hover:text-foreground"
-                  >
-                    Set as default
-                  </button>
-                )}
-                <button
-                  type="button"
-                  onClick={() => remove(entry.id)}
-                  className="text-xs text-destructive hover:text-destructive/80"
-                >
-                  Remove
-                </button>
               </div>
-            </div>
 
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-              <div className="space-y-1 sm:col-span-2">
-                <Label className="text-xs">Phone Number</Label>
+              {/* Phone input */}
+              <div className="space-y-1.5">
+                <Label htmlFor={`phone-${entry.vertical}`} className="text-xs">
+                  Phone Number
+                </Label>
                 <Input
-                  placeholder="(555) 000-0000"
+                  id={`phone-${entry.vertical}`}
+                  type="tel"
+                  placeholder={country === 'US' || country === 'CA' ? '(555) 000-0000' : '+44 20 0000 0000'}
                   value={entry.phoneNumber}
-                  onChange={(e) => update(entry.id, 'phoneNumber', e.target.value)}
+                  onChange={(e) => update(entry.vertical, e.target.value)}
+                  onBlur={() => touch(entry.vertical)}
+                  className={cn(error ? 'border-destructive' : '')}
                 />
-              </div>
-              <div className="space-y-1">
-                <Label className="text-xs">Area Code</Label>
-                <Input
-                  placeholder="555"
-                  maxLength={6}
-                  value={entry.areaCode}
-                  onChange={(e) => update(entry.id, 'areaCode', e.target.value)}
-                />
+                {error && (
+                  <p className="text-xs text-destructive">{error}</p>
+                )}
               </div>
             </div>
-
-            <div className="space-y-1">
-              <Label className="text-xs">Label (optional)</Label>
-              <Input
-                placeholder="e.g. Beverly Hills, West Side"
-                value={entry.label}
-                onChange={(e) => update(entry.id, 'label', e.target.value)}
-              />
-            </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
-      <Button type="button" variant="outline" onClick={add} className="w-full">
-        + Add Phone Number
-      </Button>
-
+      {/* Info box */}
       <div className="rounded-lg border border-border bg-muted/30 p-4">
         <p className="text-sm text-muted-foreground leading-relaxed">
-          Add a local number for each market you serve. We recommend using a virtual phone system
-          like <span className="font-medium text-foreground">CallRail</span> or{' '}
-          <span className="font-medium text-foreground">Twilio</span> to track calls and
-          automatically swap numbers based on visitor location.
+          Set up each number in your virtual phone system (e.g.{' '}
+          <span className="font-medium text-foreground">CallRail</span> or{' '}
+          <span className="font-medium text-foreground">Twilio</span>) to enable
+          automatic call routing and location-based number swapping.
         </p>
       </div>
     </div>

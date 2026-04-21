@@ -44,6 +44,13 @@ function validateStep(step: number, s1: BusinessInfo, s2: ServiceInfo, s3: Phone
     const zipErr = validateZip(s2.zip, s1.country);
     if (zipErr) return zipErr;
   }
+  if (step === 3) {
+    for (const entry of s3) {
+      if (!entry.phoneNumber.trim()) return `Enter a phone number for ${entry.verticalLabel}.`;
+      const err = validatePhone(entry.phoneNumber, s1.country);
+      if (err) return `${entry.verticalLabel}: ${err}`;
+    }
+  }
   if (step === 4) {
     if (!s4.subdomain.trim()) return 'Subdomain is required.';
     if (s4.fallbackHeadlineStyle === 'custom' && !s4.customHeadline.trim()) {
@@ -77,6 +84,18 @@ export default function Onboarding() {
     if (err) {
       toast({ title: 'Please fix the following', description: err, variant: 'destructive' });
       return;
+    }
+    // When moving to Step 3, initialise one PhoneEntry per vertical from Step 2
+    if (step === 2) {
+      const existing = new Map(step3.map((e) => [e.vertical, e]));
+      setStep3(
+        step2.verticals.map((v, idx) => ({
+          vertical: v,
+          verticalLabel: VERTICAL_LABELS[v] ?? v,
+          phoneNumber: existing.get(v)?.phoneNumber ?? '',
+          isDefault: idx === 0,
+        }))
+      );
     }
     setStep((s) => Math.min(s + 1, 5));
   };
@@ -164,8 +183,8 @@ export default function Onboarding() {
             step3.map((p) => ({
               client_id: client.id,
               phone_number: p.phoneNumber,
-              area_code: p.areaCode,
-              label: p.label,
+              area_code: '',
+              label: p.verticalLabel,
               is_default: p.isDefault,
             }))
           );
@@ -242,7 +261,7 @@ export default function Onboarding() {
         <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
           {step === 1 && <Step1BusinessInfo data={step1} onChange={setStep1} />}
           {step === 2 && <Step2ServiceVertical data={step2} country={step1.country} onChange={setStep2} />}
-          {step === 3 && <Step3PhoneNumbers data={step3} onChange={setStep3} />}
+          {step === 3 && <Step3PhoneNumbers data={step3} country={step1.country} onChange={setStep3} />}
           {step === 4 && (
             <Step4LandingPageSetup data={step4} onChange={setStep4} serviceName={serviceName} />
           )}
