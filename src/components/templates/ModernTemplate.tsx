@@ -39,11 +39,14 @@ export function ModernTemplate({ page, client, geo }: ModernTemplateProps) {
 
   // Headline logic per spec:
   // - city resolved → "{service_name} in {city}"
-  // - no city → "5-Star Rated {service_name} – Local & Dependable"
+  // - no city → use fallback_headline from DB, or default "5-Star Rated {service_name} – Local & Dependable"
   const cityResolved = geo.city && geo.city !== 'your area';
+  const fallbackHeadline =
+    (page as any).fallback_headline ||
+    `5-Star Rated ${serviceName} – Local & Dependable`;
   const headline = cityResolved
     ? `${serviceName} in ${geo.city}`
-    : `5-Star Rated ${serviceName} – Local & Dependable`;
+    : fallbackHeadline;
 
   const rawSubheadline = (page as any).subheadline || (page as any).subheadline_template || '';
   const rawAbout = (page as any).about_content || (page as any).about_text || '';

@@ -5,6 +5,7 @@ export interface BusinessInfo {
   businessName: string;
   ownerName: string;
   email: string;
+  password: string;
   mainPhone: string;
 }
 
@@ -55,6 +56,17 @@ export function Step1BusinessInfo({ data, onChange }: Props) {
             placeholder="you@example.com"
             value={data.email}
             onChange={set('email')}
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="password">Password</Label>
+          <Input
+            id="password"
+            type="password"
+            placeholder="Min. 8 characters"
+            value={data.password}
+            onChange={set('password')}
           />
         </div>
 

@@ -30,6 +30,7 @@ function validateStep(step: number, s1: BusinessInfo, s2: ServiceInfo, s3: Phone
   if (step === 1) {
     if (!s1.businessName.trim()) return 'Business name is required.';
     if (!s1.email.trim() || !s1.email.includes('@')) return 'A valid email is required.';
+    if (!s1.password || s1.password.length < 8) return 'Password must be at least 8 characters.';
     if (!s1.mainPhone.trim()) return 'Main phone number is required.';
   }
   if (step === 2) {
@@ -53,7 +54,7 @@ export default function Onboarding() {
   const [submitting, setSubmitting] = useState(false);
 
   const [step1, setStep1] = useState<BusinessInfo>({
-    businessName: '', ownerName: '', email: '', mainPhone: '',
+    businessName: '', ownerName: '', email: '', password: '', mainPhone: '',
   });
   const [step2, setStep2] = useState<ServiceInfo>({
     vertical: '', defaultCity: '', state: '',
@@ -85,9 +86,22 @@ export default function Onboarding() {
 
     setSubmitting(true);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      // 1. Create Supabase auth account
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email: step1.email,
+        password: step1.password,
+        options: {
+          data: {
+            full_name: step1.ownerName,
+            business_name: step1.businessName,
+          },
+        },
+      });
 
-      // 1. Insert client
+      if (authError) throw authError;
+      const user = authData.user;
+
+      // 3. Insert client
       const { data: client, error: clientError } = await supabase
         .from('clients')
         .insert({
@@ -107,7 +121,7 @@ export default function Onboarding() {
 
       if (clientError || !client) throw clientError ?? new Error('Failed to create client');
 
-      // 2. Insert landing page
+      // 4. Insert landing page
       const fallbackHeadline =
         step4.fallbackHeadlineStyle === 'A'
           ? `5-Star Rated ${serviceName} – Local & Dependable`
@@ -127,12 +141,13 @@ export default function Onboarding() {
           primary_color: step4.primaryColor,
           theme_style: 'modern',
           service_name: serviceName,
+          fallback_headline: fallbackHeadline,
           is_published: true,
         });
 
       if (pageError) throw pageError;
 
-      // 3. Insert phone numbers
+      // 5. Insert phone numbers
       if (step3.length > 0) {
         const { error: phoneError } = await supabase
           .from('phone_numbers')
@@ -148,8 +163,8 @@ export default function Onboarding() {
         if (phoneError) throw phoneError;
       }
 
-      toast({ title: 'Account created!', description: 'Your landing page is ready.' });
-      navigate('/client');
+      toast({ title: 'Account created!', description: 'Your landing page is live. Redirecting...' });
+      navigate(`/p/${step4.subdomain}`);
     } catch (err: any) {
       toast({
         title: 'Something went wrong',

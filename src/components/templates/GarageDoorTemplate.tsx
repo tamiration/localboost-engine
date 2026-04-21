@@ -1,5 +1,6 @@
 import { injectDynamicContent, type GeoResult } from '@/lib/geoEngine';
 import type { Tables } from '@/integrations/supabase/types';
+import { StructuredData } from '@/components/StructuredData';
 
 interface GarageDoorTemplateProps {
   page: Tables<'landing_pages'>;
@@ -8,16 +9,36 @@ interface GarageDoorTemplateProps {
 }
 
 export function GarageDoorTemplate({ page, client, geo }: GarageDoorTemplateProps) {
+  const serviceName =
+    (page as any).service_name || 'Garage Door Repair';
+
   const extras = {
     business_name: client.business_name ?? '',
     phone: geo.resolvedPhone,
-    service: 'Garage Door Repair',
+    service: serviceName,
   };
 
-  const headline = injectDynamicContent(page.headline_template ?? '', geo, extras);
-  const subheadline = injectDynamicContent(page.subheadline_template ?? '', geo, extras);
+  // Headline logic: city resolved → "{service} in {city}", else fallback_headline or default
+  const cityResolved = geo.city && geo.city !== 'your area';
+  const fallbackHeadline =
+    (page as any).fallback_headline ||
+    `5-Star Rated ${serviceName} – Local & Dependable`;
+  const headline = cityResolved
+    ? `${serviceName} in ${geo.city}`
+    : fallbackHeadline;
+
+  // Support both old schema (subheadline_template) and new (subheadline)
+  const subheadline = injectDynamicContent(
+    (page as any).subheadline || page.subheadline_template || '',
+    geo,
+    extras
+  );
   const cta = injectDynamicContent(page.cta_text ?? 'Call Now — Free Estimate', geo, extras);
-  const about = injectDynamicContent(page.about_text ?? '', geo, extras);
+  const about = injectDynamicContent(
+    (page as any).about_content || page.about_text || '',
+    geo,
+    extras
+  );
   const serviceArea = injectDynamicContent(page.service_area_description ?? '', geo, extras);
 
   const primary = page.primary_color || '#2563eb';
@@ -26,6 +47,7 @@ export function GarageDoorTemplate({ page, client, geo }: GarageDoorTemplateProp
 
   return (
     <div className="min-h-screen bg-white text-gray-900">
+      <StructuredData client={client} geo={geo} />
       <header className="border-b-2" style={{ borderColor: primary }}>
         <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4">
           {page.logo_url ? (
