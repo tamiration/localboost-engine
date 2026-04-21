@@ -1,5 +1,6 @@
 import { injectDynamicContent, type GeoResult } from '@/lib/geoEngine';
 import type { Tables } from '@/integrations/supabase/types';
+import { StructuredData } from '@/components/StructuredData';
 
 interface ModernTemplateProps {
   page: Tables<'landing_pages'>;
@@ -77,6 +78,7 @@ export function ModernTemplate({ page, client, geo }: ModernTemplateProps) {
 
   return (
     <div className="min-h-screen bg-white text-gray-900">
+      <StructuredData client={client} geo={geo} />
       {/* Header */}
       <header className="sticky top-0 z-50 border-b bg-white/95 backdrop-blur">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4">
