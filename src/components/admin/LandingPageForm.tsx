@@ -6,7 +6,8 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Loader2, Copy, Check } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Loader2, Copy, Check, Link2 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import type { Tables } from '@/integrations/supabase/types';
 
@@ -66,9 +67,12 @@ export function LandingPageForm({ initialData, onSubmit, mode, pageId }: Landing
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
   const [copied, setCopied] = useState<string | null>(null);
+  const [showClone, setShowClone] = useState(false);
+  const [cloneUrl, setCloneUrl] = useState('');
+  const [cloneLoading, setCloneLoading] = useState(false);
 
   useEffect(() => {
-    supabase.from('clients').select('*').eq('active', true).order('business_name').then(({ data }) => {
+    supabase.from('clients').select('*').eq('status', 'active').order('business_name').then(({ data }) => {
       if (data) setClients(data);
     });
   }, []);
@@ -114,6 +118,63 @@ export function LandingPageForm({ initialData, onSubmit, mode, pageId }: Landing
     try { await onSubmit(form); } finally { setSaving(false); }
   };
 
+  const handleClone = async () => {
+    if (!cloneUrl.trim()) return;
+    setCloneLoading(true);
+    try {
+      // Use allorigins.win as a CORS proxy to fetch any public page
+      const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(cloneUrl)}`;
+      const res = await fetch(proxyUrl);
+      if (!res.ok) throw new Error('Could not fetch that URL');
+      const { contents: html } = await res.json();
+      if (!html) throw new Error('Empty response from URL');
+
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(html, 'text/html');
+
+      const meta = (prop: string) =>
+        doc.querySelector(`meta[property="${prop}"]`)?.getAttribute('content') ||
+        doc.querySelector(`meta[name="${prop}"]`)?.getAttribute('content') || '';
+
+      const headline = meta('og:title') || doc.querySelector('h1')?.textContent?.trim() || doc.title || '';
+      const subheadline = meta('og:description') || meta('description') || doc.querySelector('h2')?.textContent?.trim() || '';
+      const ctaText = doc.querySelector('.cta, [class*="cta"], a[href*="tel"], button[type="submit"]')?.textContent?.trim() || 'Call Now';
+      const heroRaw = meta('og:image') || doc.querySelector('.hero img, [class*="hero"] img, img')?.getAttribute('src') || '';
+      const heroImageUrl = heroRaw.startsWith('http') ? heroRaw : heroRaw ? new URL(heroRaw, cloneUrl).href : '';
+
+      const bodyText = doc.body?.textContent?.toLowerCase() ?? '';
+      let templateType = form.template_type || 'garage_door';
+      if (bodyText.includes('chimney') || bodyText.includes('fireplace')) templateType = 'chimney';
+      else if (bodyText.includes('locksmith')) templateType = 'locksmith';
+      else if (bodyText.includes('dryer') || bodyText.includes('vent')) templateType = 'dryer_vent';
+      else if (bodyText.includes('hvac') || bodyText.includes('air condition')) templateType = 'hvac';
+      else if (bodyText.includes('plumb')) templateType = 'plumbing';
+      else if (bodyText.includes('electric')) templateType = 'electrical';
+      else if (bodyText.includes('roof')) templateType = 'roofing';
+      else if (bodyText.includes('pest')) templateType = 'pest_control';
+      else if (bodyText.includes('garage')) templateType = 'garage_door';
+
+      setForm(prev => ({
+        ...prev,
+        headline_template: headline,
+        subheadline_template: subheadline,
+        cta_text: ctaText || prev.cta_text,
+        hero_image_url: heroImageUrl || prev.hero_image_url,
+        template_type: templateType,
+      }));
+      if (!form.template_type && templateType) {
+        if (!form.headline_template) setForm(prev => ({ ...prev, headline_template: HEADLINE_DEFAULTS[templateType] ?? headline }));
+      }
+      toast({ title: 'Page cloned', description: 'Fields pre-filled. Review and adjust before saving.' });
+      setShowClone(false);
+      setCloneUrl('');
+    } catch (err: any) {
+      toast({ title: 'Clone failed', description: err.message || 'Could not scrape that URL.', variant: 'destructive' });
+    } finally {
+      setCloneLoading(false);
+    }
+  };
+
   const copyUrl = (text: string, label: string) => {
     navigator.clipboard.writeText(text);
     setCopied(label);
@@ -126,9 +187,43 @@ export function LandingPageForm({ initialData, onSubmit, mode, pageId }: Landing
   const fieldError = (key: string) => errors[key] ? <p className="text-xs text-destructive mt-1">{errors[key]}</p> : null;
 
   return (
+    <>
+    <Dialog open={showClone} onOpenChange={setShowClone}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle>Clone from URL</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-3 py-2">
+          <Label htmlFor="clone-url">Competitor or reference URL</Label>
+          <Input
+            id="clone-url"
+            placeholder="https://competitor.com/garage-door-dallas"
+            value={cloneUrl}
+            onChange={e => setCloneUrl(e.target.value)}
+            onKeyDown={e => e.key === 'Enter' && handleClone()}
+          />
+          <p className="text-xs text-muted-foreground">
+            Extracts headline, subheadline, CTA, hero image, and auto-detects the vertical. You can edit all fields after.
+          </p>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" type="button" onClick={() => setShowClone(false)}>Cancel</Button>
+          <Button type="button" onClick={handleClone} disabled={cloneLoading || !cloneUrl.trim()}>
+            {cloneLoading ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Cloning...</> : 'Clone'}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+
     <form onSubmit={handleSubmit} className="space-y-8">
       <section className="space-y-4">
-        <h3 className="text-lg font-semibold text-foreground border-b border-border pb-2">Basic Info</h3>
+        <div className="flex items-center justify-between border-b border-border pb-2">
+          <h3 className="text-lg font-semibold text-foreground">Basic Info</h3>
+          <Button type="button" variant="outline" size="sm" onClick={() => setShowClone(true)}>
+            <Link2 className="h-4 w-4 mr-2" />
+            Clone from URL
+          </Button>
+        </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <Label>Page Name *</Label>
@@ -235,5 +330,6 @@ export function LandingPageForm({ initialData, onSubmit, mode, pageId }: Landing
         {mode === 'create' ? 'Create Landing Page' : 'Save Changes'}
       </Button>
     </form>
+    </>
   );
 }
