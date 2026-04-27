@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/hooks/useAuth';
 import { verifyDNS, updateDNSStatus } from '@/lib/dnsVerify';
 import { Copy, CheckCircle, Clock, XCircle, Globe, RefreshCw } from 'lucide-react';
 
@@ -29,20 +30,31 @@ const statusConfig = {
 };
 
 export default function DnsSetup() {
+  const { user } = useAuth();
   const { toast } = useToast();
   const [pages, setPages] = useState<LandingPage[]>([]);
   const [loading, setLoading] = useState(true);
   const [verifying, setVerifying] = useState<string | null>(null);
 
   useEffect(() => {
-    fetchPages();
-  }, []);
+    if (user) fetchPages();
+  }, [user]);
 
   const fetchPages = async () => {
     setLoading(true);
+    // Get this client's record first
+    const { data: clientData } = await supabase
+      .from('clients')
+      .select('id')
+      .eq('user_id', user!.id)
+      .maybeSingle();
+
+    if (!clientData) { setLoading(false); return; }
+
     const { data } = await supabase
       .from('landing_pages')
       .select('id, page_name, subdomain, deployed, verified_at')
+      .eq('client_id', clientData.id)
       .order('created_at', { ascending: false });
     setPages((data ?? []) as LandingPage[]);
     setLoading(false);

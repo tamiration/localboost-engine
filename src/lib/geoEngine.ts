@@ -531,18 +531,28 @@ export async function logVisit(
   supabase: SupabaseClient
 ): Promise<void> {
   try {
+    // Fetch client_id from the landing page so RLS works for client analytics views
+    const { data: pageRow } = await supabase
+      .from('landing_pages')
+      .select('client_id')
+      .eq('id', landingPageId)
+      .maybeSingle();
+
     // Insert analytics row
     await supabase.from('analytics').insert({
       landing_page_id: landingPageId,
+      client_id: pageRow?.client_id ?? null,
       location_source: geoResult.resolutionSource,
       city_resolved: geoResult.city ?? '',
       device_type: geoResult.device || 'unknown',
       ad_platform: geoResult.adPlatform,
+      keyword: geoResult.keyword || null,
+      adgroup: geoResult.adgroup || null,
       page_views: 1,
       created_at: new Date().toISOString(),
     });
 
-    // Increment page_views counter via RPC
+    // Increment page_views counter on landing_pages via RPC
     await supabase.rpc('increment_page_views', {
       _landing_page_id: landingPageId,
     });

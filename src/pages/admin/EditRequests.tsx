@@ -48,16 +48,22 @@ export default function AdminEditRequests() {
   const pendingCount = requests.filter(r => r.status === 'pending').length;
 
   const updateStatus = async (id: string, status: string) => {
-    const update: Record<string, unknown> = { status };
-    if (status === 'done') update.completed_at = new Date().toISOString();
+    const update: Record<string, unknown> = { status, updated_at: new Date().toISOString() };
+    if (status === 'done' || status === 'resolved') update.completed_at = new Date().toISOString();
     await supabase.from('edit_requests').update(update).eq('id', id);
-    toast({ title: status === 'done' ? '✅ Request marked complete' : `Status updated to ${status}` });
+    toast({ title: status === 'done' ? 'Request marked complete' : `Status updated to ${status}` });
     fetchRequests();
   };
 
   const saveNote = async (id: string) => {
-    await supabase.from('edit_requests').update({ admin_notes: notes[id] ?? '' }).eq('id', id);
-    toast({ title: 'Note saved' });
+    const noteText = notes[id] ?? '';
+    await supabase.from('edit_requests').update({
+      admin_notes: noteText,
+      admin_reply: noteText,
+      replied_at: new Date().toISOString(),
+    }).eq('id', id);
+    toast({ title: 'Reply saved' });
+    fetchRequests();
   };
 
   const statusColor = (s: string | null) => {
