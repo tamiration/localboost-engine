@@ -13,6 +13,12 @@ export default defineConfig(({ mode }) => ({
     },
     // Serve index.html for all 404s so React Router handles navigation
     fs: { strict: false },
+    proxy: {
+      '/api/clone-page': {
+        target: 'http://localhost:3099',
+        changeOrigin: true,
+      },
+    },
   },
   plugins: [react(), mode === "development" && componentTagger()].filter(Boolean),
   resolve: {
