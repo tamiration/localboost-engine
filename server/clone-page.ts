@@ -84,9 +84,23 @@ app.post('/api/clone-page', async (req, res) => {
   const { url } = req.body as { url: string };
   if (!url) return res.status(400).json({ error: 'url is required' });
 
+  // Hard timeout — never leave the client hanging
+  const requestTimeout = setTimeout(() => {
+    if (!res.headersSent) res.status(504).json({ error: 'Clone timed out (45s). The page may be too slow or inaccessible.' });
+  }, 45000);
+
   let browser;
   try {
-    browser = await chromium.launch({ headless: true });
+    browser = await chromium.launch({
+      headless: true,
+      args: [
+        '--no-sandbox',
+        '--disable-setuid-sandbox',
+        '--disable-dev-shm-usage',
+        '--disable-gpu',
+        '--single-process',
+      ],
+    });
     const context = await browser.newContext({
       viewport: { width: 1440, height: 900 },
       userAgent:
@@ -94,8 +108,9 @@ app.post('/api/clone-page', async (req, res) => {
     });
     const page = await context.newPage();
 
-    // Navigate and wait for full render
-    await page.goto(url, { waitUntil: 'networkidle', timeout: 30000 });
+    // Navigate and wait for full render (domcontentloaded is faster and more reliable in sandboxes)
+    await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 20000 });
+    await page.waitForTimeout(2000);
     // Scroll to trigger lazy-load
     await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
     await page.waitForTimeout(1500);
@@ -405,11 +420,13 @@ app.post('/api/clone-page', async (req, res) => {
 
     await browser.close();
 
-    return res.json({ sections, data } as CloneResult);
+    clearTimeout(requestTimeout);
+    if (!res.headersSent) return res.json({ sections, data } as CloneResult);
   } catch (err: any) {
+    clearTimeout(requestTimeout);
     if (browser) await browser.close().catch(() => {});
     console.error('[clone-page] error:', err.message);
-    return res.status(500).json({ error: err.message || 'Clone failed' });
+    if (!res.headersSent) return res.status(500).json({ error: err.message || 'Clone failed' });
   }
 });
 
