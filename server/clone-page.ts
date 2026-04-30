@@ -79,32 +79,43 @@ function detectVertical(text: string): string {
   return 'garage_door';
 }
 
+// ─── pre-warm browser at startup so it's ready before first request ──────────
+const BROWSER_ARGS = [
+  '--no-sandbox',
+  '--disable-setuid-sandbox',
+  '--disable-dev-shm-usage',
+  '--disable-gpu',
+  '--single-process',
+];
+
+let sharedBrowser: import('playwright').Browser | null = null;
+
+async function getBrowser() {
+  if (sharedBrowser) {
+    try { await sharedBrowser.version(); return sharedBrowser; } catch { sharedBrowser = null; }
+  }
+  sharedBrowser = await chromium.launch({ headless: true, args: BROWSER_ARGS });
+  return sharedBrowser;
+}
+
+// Start warming immediately — don't wait for first request
+getBrowser().then(() => console.log('[clone-page] browser warm and ready')).catch(e => console.error('[clone-page] browser warm failed:', e.message));
+
 // ─── route ────────────────────────────────────────────────────────────────────
 app.post('/api/clone-page', async (req, res) => {
   const { url } = req.body as { url: string };
   if (!url) return res.status(400).json({ error: 'url is required' });
 
-  // Hard timeout — never leave the client hanging
+  // Hard timeout — 90s to account for browser startup + page render
   const requestTimeout = setTimeout(() => {
-    if (!res.headersSent) res.status(504).json({ error: 'Clone timed out (45s). The page may be too slow or inaccessible.' });
-  }, 45000);
+    if (!res.headersSent) res.status(504).json({ error: 'Clone timed out (90s). The page may be too slow or inaccessible.' });
+  }, 90000);
 
-  let browser;
   try {
-    browser = await chromium.launch({
-      headless: true,
-      args: [
-        '--no-sandbox',
-        '--disable-setuid-sandbox',
-        '--disable-dev-shm-usage',
-        '--disable-gpu',
-        '--single-process',
-      ],
-    });
+    const browser = await getBrowser();
     const context = await browser.newContext({
       viewport: { width: 1440, height: 900 },
-      userAgent:
-        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+      userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
     });
     const page = await context.newPage();
 
@@ -418,13 +429,12 @@ app.post('/api/clone-page', async (req, res) => {
       preview: data.template_type,
     });
 
-    await browser.close();
+    await context.close();
 
     clearTimeout(requestTimeout);
     if (!res.headersSent) return res.json({ sections, data } as CloneResult);
   } catch (err: any) {
     clearTimeout(requestTimeout);
-    if (browser) await browser.close().catch(() => {});
     console.error('[clone-page] error:', err.message);
     if (!res.headersSent) return res.status(500).json({ error: err.message || 'Clone failed' });
   }

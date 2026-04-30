@@ -94,11 +94,15 @@ export function CloneUrlDialog({ open, onOpenChange, onCloned }: Props) {
     setServerError(null);
 
     try {
+      const controller = new AbortController();
+      const fetchTimeout = setTimeout(() => controller.abort(), 90000);
       const res = await fetch('/api/clone-page', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ url: url.trim() }),
+        signal: controller.signal,
       });
+      clearTimeout(fetchTimeout);
 
       if (!res.ok) {
         const err = await res.json().catch(() => ({ error: 'Clone server error' }));
