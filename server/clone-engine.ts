@@ -4,7 +4,7 @@
  * Used by the Vite dev-server middleware (vite.config.ts) so it runs
  * directly on port 8081 without a separate process.
  */
-import { chromium, type Browser } from 'playwright';
+import { chromium } from 'playwright';
 
 // ─── types ────────────────────────────────────────────────────────────────────
 export interface SectionResult {
@@ -76,29 +76,13 @@ function detectVertical(text: string): string {
   return 'garage_door';
 }
 
-// ─── shared browser (pre-warmed, reused across requests) ─────────────────────
 const BROWSER_ARGS = [
   '--no-sandbox',
   '--disable-setuid-sandbox',
   '--disable-dev-shm-usage',
   '--disable-gpu',
-  '--single-process',
+  // --single-process intentionally omitted: causes crashes on context.close()
 ];
-
-let _browser: Browser | null = null;
-
-async function getBrowser(): Promise<Browser> {
-  if (_browser) {
-    try { await _browser.version(); return _browser; } catch { _browser = null; }
-  }
-  console.log('[clone-engine] launching browser...');
-  _browser = await chromium.launch({ headless: true, args: BROWSER_ARGS });
-  console.log('[clone-engine] browser ready');
-  return _browser;
-}
-
-// Pre-warm on import so the first request is fast
-getBrowser().catch(e => console.warn('[clone-engine] warm failed:', e.message));
 
 // ─── screenshot helper ────────────────────────────────────────────────────────
 async function screenshotLocator(
@@ -126,7 +110,9 @@ async function screenshotLocator(
 
 // ─── main export ─────────────────────────────────────────────────────────────
 export async function runClone(url: string): Promise<CloneResult> {
-  const browser = await getBrowser();
+  // Fresh browser per request — shared browser crashes on context.close() without --single-process
+  console.log('[clone-engine] launching browser for', url);
+  const browser = await chromium.launch({ headless: true, args: BROWSER_ARGS });
   const context = await browser.newContext({
     viewport: { width: 1440, height: 900 },
     userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
@@ -374,6 +360,6 @@ export async function runClone(url: string): Promise<CloneResult> {
 
     return { sections, data };
   } finally {
-    await context.close();
+    await browser.close();
   }
 }

@@ -2,42 +2,26 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import path from "path";
 import { componentTagger } from "lovable-tagger";
+import { spawn } from "child_process";
 import type { Plugin, ViteDevServer } from "vite";
 import type { IncomingMessage, ServerResponse } from "http";
 
 // ---------------------------------------------------------------------------
-// Clone-page Vite plugin — runs Playwright server-side on the Vite dev server
+// Clone-page Vite plugin
+// Spawns server/clone-runner.mjs as a child process per-request so Playwright
+// is fully isolated from Vite's module graph — no deadlocks, no import issues.
 // ---------------------------------------------------------------------------
 function clonePagePlugin(): Plugin {
-  // Pre-load runClone at plugin init time so it's never imported inside a request
-  let runClone: ((url: string) => Promise<unknown>) | null = null;
+  const RUNNER = path.resolve(__dirname, "server/clone-runner.mjs");
 
   return {
     name: "clone-page-api",
-
-    // buildStart fires when Vite starts — load the engine here
-    async buildStart() {
-      try {
-        // Use createRequire to load the compiled clone engine as CJS
-        // This avoids Vite's own module graph interfering
-        const { createRequire } = await import("module");
-        const req = createRequire(import.meta.url);
-        // We load clone-engine via tsx's runtime register
-        // tsx is already patching require() since we started with tsx
-        runClone = req("./server/clone-engine.ts").runClone;
-        console.log("[clone-page] engine loaded at buildStart");
-      } catch (e: any) {
-        console.warn("[clone-page] engine load failed at buildStart:", e.message);
-      }
-    },
-
     configureServer(server: ViteDevServer) {
       server.middlewares.use(
         "/api/clone-page",
         async (req: IncomingMessage, res: ServerResponse) => {
-          console.log("[clone-page] hit:", req.method, req.url);
 
-          // Parse target URL from GET query or POST body
+          // Parse target URL from GET ?url= or POST body
           let targetUrl = "";
           if (req.method === "GET") {
             const qs = (req.url ?? "").split("?")[1] ?? "";
@@ -59,41 +43,58 @@ function clonePagePlugin(): Plugin {
             return;
           }
 
-          // Lazy-load engine if buildStart didn't succeed
-          if (!runClone) {
-            try {
-              const { createRequire } = await import("module");
-              const r = createRequire(import.meta.url);
-              runClone = r("./server/clone-engine.ts").runClone;
-            } catch (e: any) {
+          console.log("[clone-page] spawning runner for:", targetUrl);
+
+          // Spawn clone-runner.mjs as a completely separate Node process
+          const child = spawn(process.execPath, [RUNNER, targetUrl], {
+            stdio: ["ignore", "pipe", "pipe"],
+            env: { ...process.env },
+          });
+
+          // Hard 110s kill
+          const killer = setTimeout(() => {
+            child.kill("SIGKILL");
+            if (!res.writableEnded) {
+              res.writeHead(504, { "Content-Type": "application/json" });
+              res.end(JSON.stringify({ error: "Clone timed out (110s). Page may be too slow." }));
+            }
+          }, 110_000);
+
+          const stdout: Buffer[] = [];
+          const stderr: Buffer[] = [];
+          child.stdout.on("data", (d: Buffer) => stdout.push(d));
+          child.stderr.on("data", (d: Buffer) => stderr.push(d));
+
+          child.on("close", (code) => {
+            clearTimeout(killer);
+            if (res.writableEnded) return;
+
+            const raw = Buffer.concat(stdout).toString();
+            if (stderr.length) console.error("[clone-page] stderr:", Buffer.concat(stderr).toString().slice(0, 500));
+
+            if (!raw) {
               res.writeHead(500, { "Content-Type": "application/json" });
-              res.end(JSON.stringify({ error: "Clone engine failed to load: " + e.message }));
+              res.end(JSON.stringify({ error: `Runner exited (code ${code}) with no output` }));
               return;
             }
-          }
 
-        const timer = setTimeout(() => {
-          if (!res.writableEnded) {
-            res.writeHead(504, { "Content-Type": "application/json" });
-            res.end(JSON.stringify({ error: "Clone timed out (120s). Try a faster/simpler page." }));
-          }
-        }, 120_000);
-
-          try {
-            const result = await runClone!(targetUrl);
-            clearTimeout(timer);
-            if (!res.writableEnded) {
+            try {
+              JSON.parse(raw); // validate
               res.writeHead(200, { "Content-Type": "application/json" });
-              res.end(JSON.stringify(result));
+              res.end(raw);
+            } catch {
+              res.writeHead(500, { "Content-Type": "application/json" });
+              res.end(JSON.stringify({ error: "Runner returned invalid JSON" }));
             }
-          } catch (err: any) {
-            clearTimeout(timer);
-            console.error("[clone-page] runClone error:", err.message);
+          });
+
+          child.on("error", (err) => {
+            clearTimeout(killer);
             if (!res.writableEnded) {
               res.writeHead(500, { "Content-Type": "application/json" });
-              res.end(JSON.stringify({ error: err.message || "Clone failed" }));
+              res.end(JSON.stringify({ error: err.message }));
             }
-          }
+          });
         }
       );
     },
