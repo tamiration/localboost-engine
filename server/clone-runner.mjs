@@ -42,7 +42,7 @@ async function screenshotLocator(page, selectors, scrollToIt = false) {
       if (!box || box.width < 100 || box.height < 50) continue;
       if (scrollToIt) {
         await page.evaluate(y => window.scrollTo(0, Math.max(0, y - 80)), box.y);
-        await page.waitForTimeout(150);
+        await page.waitForTimeout(80);
       }
       const buf = await page.screenshot({
         clip: { x: Math.max(0, box.x), y: Math.max(0, box.y), width: box.width, height: Math.min(box.height, 600) },
@@ -67,15 +67,17 @@ async function run(url) {
     const page = await context.newPage();
 
     try {
-      await page.goto(url, { waitUntil: 'commit', timeout: 12000 });
-    } catch { /* best effort */ }
-
-    await page.waitForTimeout(800);
+      await page.goto(url, { waitUntil: 'commit', timeout: 8000 });
+    } catch {
+      try { await page.goto(url, { waitUntil: 'commit', timeout: 5000 }); } catch { /* best effort */ }
+    }
+    // Brief wait for JS rendering — keep short
+    await page.waitForTimeout(600);
     try {
       await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
-      await page.waitForTimeout(400);
+      await page.waitForTimeout(300);
       await page.evaluate(() => window.scrollTo(0, 0));
-      await page.waitForTimeout(200);
+      await page.waitForTimeout(100);
     } catch { /* ignore */ }
 
     const sections = [];
