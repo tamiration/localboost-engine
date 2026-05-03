@@ -134,13 +134,22 @@ export async function runClone(url: string): Promise<CloneResult> {
   const page = await context.newPage();
 
   try {
-    await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 20000 });
-    await page.waitForTimeout(2000);
-    // Trigger lazy-load by scrolling through
-    await page.evaluate(() => { window.scrollTo(0, document.body.scrollHeight); });
-    await page.waitForTimeout(1200);
-    await page.evaluate(() => { window.scrollTo(0, 0); });
-    await page.waitForTimeout(500);
+    // Navigate — accept both full load and partial load gracefully
+    try {
+      await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 15000 });
+    } catch {
+      // If domcontentloaded times out, try commit (fires as soon as server responds)
+      try { await page.goto(url, { waitUntil: 'commit', timeout: 10000 }); } catch { /* best effort */ }
+    }
+    // Wait for JS-rendered content
+    await page.waitForTimeout(1500);
+    // Trigger lazy-load
+    try {
+      await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+      await page.waitForTimeout(800);
+      await page.evaluate(() => window.scrollTo(0, 0));
+      await page.waitForTimeout(400);
+    } catch { /* ignore scroll errors */ }
 
     const sections: SectionResult[] = [];
     const data: ClonedPage = {

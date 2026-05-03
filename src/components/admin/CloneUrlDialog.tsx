@@ -117,10 +117,8 @@ export function CloneUrlDialog({ open, onOpenChange, onCloned }: Props) {
       const ac = new AbortController();
       const timer = setTimeout(() => ac.abort(), 90_000);
 
-      const res = await fetch('/api/clone-page', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url: trimmed }),
+      const res = await fetch(`/api/clone-page?url=${encodeURIComponent(trimmed)}`, {
+        method: 'GET',
         signal: ac.signal,
       });
       clearTimeout(timer);

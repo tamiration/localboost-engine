@@ -9,44 +9,58 @@ function clonePagePlugin(): Plugin {
   return {
     name: "clone-page-api",
     configureServer(server) {
+      // Handle both GET (with ?url=...) and POST
       server.middlewares.use("/api/clone-page", async (req, res) => {
-        if (req.method !== "POST") {
-          res.writeHead(405);
-          res.end("Method Not Allowed");
+        console.log("[clone-page] request received:", req.method, req.url);
+
+        let targetUrl = "";
+
+        if (req.method === "GET" || req.method === "HEAD") {
+          // Parse ?url= from query string
+          const qs = req.url?.includes("?") ? req.url.split("?")[1] : "";
+          const params = new URLSearchParams(qs);
+          targetUrl = params.get("url") || "";
+        } else if (req.method === "POST") {
+          const chunks: Buffer[] = [];
+          req.on("data", (c: Buffer) => chunks.push(c));
+          await new Promise<void>((r) => req.on("end", r));
+          try {
+            const body = JSON.parse(Buffer.concat(chunks).toString());
+            targetUrl = body.url;
+          } catch { /* fall through */ }
+        } else {
+          res.writeHead(405, { "Content-Type": "application/json" });
+          res.end(JSON.stringify({ error: "Method Not Allowed" }));
           return;
         }
 
-        // Collect body
-        const chunks: Buffer[] = [];
-        req.on("data", (c: Buffer) => chunks.push(c));
-        await new Promise<void>((r) => req.on("end", r));
-        const body = JSON.parse(Buffer.concat(chunks).toString());
-        const { url } = body as { url: string };
-
-        if (!url) {
+        if (!targetUrl) {
           res.writeHead(400, { "Content-Type": "application/json" });
           res.end(JSON.stringify({ error: "url is required" }));
           return;
         }
 
-        // Hard 90s response timeout
+        console.log("[clone-page] cloning:", targetUrl);
+
         const deadline = setTimeout(() => {
+          console.log("[clone-page] TIMEOUT");
           if (!res.writableEnded) {
             res.writeHead(504, { "Content-Type": "application/json" });
-            res.end(JSON.stringify({ error: "Clone timed out (90s). The page may be too slow or blocked." }));
+            res.end(JSON.stringify({ error: "Clone timed out (90s)." }));
           }
         }, 90_000);
 
         try {
-          // Dynamically import the clone engine (keeps cold-start out of Vite startup)
           const { runClone } = await import("./server/clone-engine.ts");
-          const result = await runClone(url);
+          const result = await runClone(targetUrl);
+          console.log("[clone-page] done, sections:", result.sections.length);
           clearTimeout(deadline);
           if (!res.writableEnded) {
             res.writeHead(200, { "Content-Type": "application/json" });
             res.end(JSON.stringify(result));
           }
         } catch (err: any) {
+          console.error("[clone-page] error:", err.message);
           clearTimeout(deadline);
           if (!res.writableEnded) {
             res.writeHead(500, { "Content-Type": "application/json" });
