@@ -113,7 +113,7 @@ async function screenshotLocator(
       if (!box || box.width < 100 || box.height < 50) continue;
       if (scrollToIt) {
         await page.evaluate(y => window.scrollTo(0, Math.max(0, y - 80)), box.y);
-        await page.waitForTimeout(400);
+        await page.waitForTimeout(150);
       }
       const buf = await page.screenshot({
         clip: { x: Math.max(0, box.x), y: Math.max(0, box.y), width: box.width, height: Math.min(box.height, 600) },
@@ -134,21 +134,20 @@ export async function runClone(url: string): Promise<CloneResult> {
   const page = await context.newPage();
 
   try {
-    // Navigate — accept both full load and partial load gracefully
+    // Navigate — try commit first (fires on first byte), very fast even on slow networks
     try {
-      await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 15000 });
+      await page.goto(url, { waitUntil: 'commit', timeout: 12000 });
     } catch {
-      // If domcontentloaded times out, try commit (fires as soon as server responds)
-      try { await page.goto(url, { waitUntil: 'commit', timeout: 10000 }); } catch { /* best effort */ }
+      /* best effort — proceed with partial DOM if any */
     }
-    // Wait for JS-rendered content
-    await page.waitForTimeout(1500);
-    // Trigger lazy-load
+    // Brief settle for JS-rendered content
+    await page.waitForTimeout(800);
+    // Trigger lazy-load images
     try {
       await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
-      await page.waitForTimeout(800);
-      await page.evaluate(() => window.scrollTo(0, 0));
       await page.waitForTimeout(400);
+      await page.evaluate(() => window.scrollTo(0, 0));
+      await page.waitForTimeout(200);
     } catch { /* ignore scroll errors */ }
 
     const sections: SectionResult[] = [];

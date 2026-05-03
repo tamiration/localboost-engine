@@ -115,7 +115,7 @@ export function CloneUrlDialog({ open, onOpenChange, onCloned }: Props) {
 
     try {
       const ac = new AbortController();
-      const timer = setTimeout(() => ac.abort(), 90_000);
+      const timer = setTimeout(() => ac.abort(), 120_000);
 
       const res = await fetch(`/api/clone-page?url=${encodeURIComponent(trimmed)}`, {
         method: 'GET',
@@ -131,7 +131,7 @@ export function CloneUrlDialog({ open, onOpenChange, onCloned }: Props) {
       setPhase('review');
     } catch (e: any) {
       const msg = e.name === 'AbortError'
-        ? 'Request timed out after 90s. The page may be too slow or blocking bots.'
+        ? 'Request timed out after 120s. The page may be too slow or blocking bots.'
         : e.message?.includes('Failed to fetch') || e.message?.includes('ECONNREFUSED')
           ? 'Clone server not responding. Make sure the Vite dev server is running.'
           : (e.message ?? 'Clone failed');
@@ -223,7 +223,7 @@ export function CloneUrlDialog({ open, onOpenChange, onCloned }: Props) {
                   <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded break-all">{url}</span>
                   , scrolling through all sections, and taking pixel-level screenshots.
                 </p>
-                <p className="text-xs text-muted-foreground">Usually takes 15–30 seconds.</p>
+                <p className="text-xs text-muted-foreground">Usually takes 15–60 seconds depending on page complexity.</p>
               </div>
             </div>
           )}
