@@ -99,8 +99,12 @@ function PageList() {
   };
 
   const handleDeploy = async (id: string, deployed: boolean) => {
-    await supabase.from('landing_pages').update({ deployed: !deployed }).eq('id', id);
-    toast({ title: deployed ? 'Page unpublished' : 'Page deployed' });
+    const nowDeployed = !deployed;
+    await supabase
+      .from('landing_pages')
+      .update({ deployed: nowDeployed, is_published: nowDeployed })
+      .eq('id', id);
+    toast({ title: nowDeployed ? 'Page deployed' : 'Page unpublished' });
     fetchPages();
   };
 
@@ -287,7 +291,10 @@ function PageDetail({ pageId }: { pageId: string }) {
   };
 
   const handleOverrideLive = async () => {
-    await supabase.from('landing_pages').update({ deployed: true, verified_at: new Date().toISOString() }).eq('id', pageId);
+    await supabase
+      .from('landing_pages')
+      .update({ deployed: true, is_published: true, verified_at: new Date().toISOString() })
+      .eq('id', pageId);
     toast({ title: '✅ Page marked as Live (override)' });
     fetchData();
   };

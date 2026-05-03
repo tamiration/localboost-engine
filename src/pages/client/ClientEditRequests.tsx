@@ -56,18 +56,30 @@ export default function ClientEditRequests() {
   const [submitting, setSubmitting] = useState(false);
 
   const fetchData = useCallback(async () => {
+    if (!user) return;
     setLoading(true);
+
+    // Resolve this user's client record
+    const { data: clientData } = await supabase
+      .from('clients')
+      .select('id')
+      .eq('user_id', user.id)
+      .maybeSingle();
+
+    if (!clientData) { setLoading(false); return; }
+
     const [reqR, pagesR] = await Promise.all([
       supabase
         .from('edit_requests')
         .select('id, edit_description, status, admin_notes, created_at, completed_at, landing_page_id, landing_pages(page_name)')
+        .eq('client_id', clientData.id)
         .order('created_at', { ascending: false }),
-      supabase.from('landing_pages').select('id, page_name'),
+      supabase.from('landing_pages').select('id, page_name').eq('client_id', clientData.id),
     ]);
     setRequests((reqR.data ?? []) as unknown as EditRequest[]);
     setPages((pagesR.data ?? []) as PageOption[]);
     setLoading(false);
-  }, []);
+  }, [user]);
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
@@ -233,9 +245,9 @@ export default function ClientEditRequests() {
                               <p className="text-sm">{req.edit_description}</p>
                             </div>
                             {req.admin_notes && (
-                              <div>
-                                <p className="text-xs font-medium text-muted-foreground mb-1">Admin Notes</p>
-                                <p className="text-sm text-primary">{req.admin_notes}</p>
+                              <div className="rounded-md border border-primary/20 bg-primary/5 p-3">
+                                <p className="text-xs font-medium text-primary mb-1">Admin Reply</p>
+                                <p className="text-sm text-foreground">{req.admin_notes}</p>
                               </div>
                             )}
                             {req.completed_at && (

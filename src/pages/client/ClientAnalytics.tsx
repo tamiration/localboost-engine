@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
@@ -28,6 +29,7 @@ interface PageInfo {
 }
 
 export default function ClientAnalytics() {
+  const { user } = useAuth();
   const [analytics, setAnalytics] = useState<AnalyticsRow[]>([]);
   const [pages, setPages] = useState<PageInfo[]>([]);
   const [loading, setLoading] = useState(true);
@@ -35,13 +37,24 @@ export default function ClientAnalytics() {
   const [selectedPage, setSelectedPage] = useState('all');
 
   const fetchData = useCallback(async () => {
+    if (!user) return;
     setLoading(true);
+
+    // Get client record to scope queries
+    const { data: clientData } = await supabase
+      .from('clients')
+      .select('id')
+      .eq('user_id', user.id)
+      .maybeSingle();
+
+    if (!clientData) { setLoading(false); return; }
+
     const since = dateRange === 'all' ? undefined : startOfDay(subDays(new Date(), parseInt(dateRange))).toISOString();
 
     const [pagesR, analyticsR] = await Promise.all([
-      supabase.from('landing_pages').select('id, page_name, page_views'),
+      supabase.from('landing_pages').select('id, page_name, page_views').eq('client_id', clientData.id),
       (() => {
-        let q = supabase.from('analytics').select('*');
+        let q = supabase.from('analytics').select('*').eq('client_id', clientData.id);
         if (since) q = q.gte('created_at', since);
         return q.order('created_at', { ascending: true });
       })(),
@@ -50,7 +63,7 @@ export default function ClientAnalytics() {
     setPages((pagesR.data ?? []) as PageInfo[]);
     setAnalytics((analyticsR.data ?? []) as AnalyticsRow[]);
     setLoading(false);
-  }, [dateRange]);
+  }, [dateRange, user]);
 
   useEffect(() => { fetchData(); }, [fetchData]);
 

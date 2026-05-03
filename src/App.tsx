@@ -7,6 +7,9 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/hooks/useAuth";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import Login from "@/pages/Login";
+import AuthCallback from "@/pages/AuthCallback";
+import ForgotPassword from "@/pages/ForgotPassword";
+import ResetPassword from "@/pages/ResetPassword";
 import WaitingForAccess from "@/pages/WaitingForAccess";
 import AdminLayout from "@/layouts/AdminLayout";
 import ClientLayout from "@/layouts/ClientLayout";
@@ -17,6 +20,8 @@ import AdminTemplates from "@/pages/admin/Templates";
 import AdminAnalytics from "@/pages/admin/Analytics";
 import AdminEditRequests from "@/pages/admin/EditRequests";
 import AdminSettings from "@/pages/admin/AdminSettings";
+import UserManagement from "@/pages/admin/UserManagement";
+import ClientOverview from "@/pages/client/ClientOverview";
 import MyLandingPages from "@/pages/client/MyLandingPages";
 import ClientAnalytics from "@/pages/client/ClientAnalytics";
 import ClientEditRequests from "@/pages/client/ClientEditRequests";
@@ -38,6 +43,9 @@ const App = () => (
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/login" element={<Login />} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
+            <Route path="/auth/callback" element={<AuthCallback />} />
+            <Route path="/auth/reset-password" element={<ResetPassword />} />
             <Route path="/waiting" element={<WaitingForAccess />} />
 
             <Route path="/admin" element={<ProtectedRoute allowedRole="admin"><AdminLayout /></ProtectedRoute>}>
@@ -50,12 +58,15 @@ const App = () => (
               <Route path="analytics" element={<AdminAnalytics />} />
               <Route path="edit-requests" element={<AdminEditRequests />} />
               <Route path="settings" element={<AdminSettings />} />
+              <Route path="users" element={<UserManagement />} />
             </Route>
 
             <Route path="/client" element={<ProtectedRoute allowedRole="client"><ClientLayout /></ProtectedRoute>}>
-              <Route index element={<MyLandingPages />} />
+              <Route index element={<ClientOverview />} />
+              <Route path="pages" element={<MyLandingPages />} />
               <Route path="analytics" element={<ClientAnalytics />} />
               <Route path="edit-requests" element={<ClientEditRequests />} />
+              <Route path="dns" element={<DnsSetup />} />
               <Route path="dns-setup" element={<DnsSetup />} />
               <Route path="billing" element={<Billing />} />
             </Route>

@@ -50,14 +50,15 @@ export default function LandingPage() {
       }
 
       try {
-        // First find the client by subdomain
-        const { data: clientData } = await supabase
-          .from('clients')
+        // Find the landing page directly by subdomain (deployed or published)
+        const { data: pageData } = await supabase
+          .from('landing_pages')
           .select('*')
           .eq('subdomain', subdomain)
+          .or('is_published.eq.true,deployed.eq.true')
           .maybeSingle();
 
-        if (!clientData) {
+        if (!pageData) {
           if (!cancelled) {
             setNotFound(true);
             setLoading(false);
@@ -65,15 +66,14 @@ export default function LandingPage() {
           return;
         }
 
-        // Then find the landing page for this client
-        const { data: pageData } = await supabase
-          .from('landing_pages')
+        // Then get the client for this page
+        const { data: clientData } = await supabase
+          .from('clients')
           .select('*')
-          .eq('client_id', clientData.id)
-          .eq('is_published', true)
+          .eq('id', pageData.client_id)
           .maybeSingle();
 
-        if (!pageData) {
+        if (!clientData) {
           if (!cancelled) {
             setNotFound(true);
             setLoading(false);
